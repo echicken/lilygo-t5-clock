@@ -39,6 +39,8 @@ I'm using the variant of this display with a JST battery connector rather than t
 
 I initially used the Arduino [Ticker](https://www.arduino.cc/reference/en/libraries/ticker/) library, and then [TickTwo](https://github.com/sstaub/TickTwo) in order to schedule various timed events. It quickly became clear that the current consumption was unsuitable for a battery-powered device, even when turning WiFi off when it wasn't needed and limiting screen updates to a reasonable extent.
 
+The EPD is fully powered off between updates, including the obnoxious blue LED when on battery power.
+
 #### Deep Sleep
 
 I'm now putting the ESP32 into deep sleep mode when it can sit idle, waking it up once per minute to update the clock. (The sleep interval is recalculated each time, so that it'll update as close to the start of the next minute as possible.) In this scenario, the `loop()` function is never called, and everything happens in `setup()`. Values are stored in RTC memory to persist between sleep/wake cycles. Some good info on this topic was found [here](https://randomnerdtutorials.com/esp32-deep-sleep-arduino-ide-wake-up-sources/).
@@ -55,7 +57,7 @@ Partial updating of the screen is used for speed and, presumably, to reduce powe
 
 The [LilyGo EPD47](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47) driver from [Valentin Roland](https://github.com/vroland)'s [EPDiy](https://github.com/vroland/epdiy) project via [Xinyuan-LilyGO](https://github.com/Xinyuan-LilyGO) is used in this project.
 
-Weather icons are from the [Meteocons](https://www.alessioatzeni.com/meteocons/) font by [Alessio Atzeni](https://www.alessioatzeni.com/meteocons/).
+Weather icons are from the [Meteocons](https://www.alessioatzeni.com/meteocons/) font by [Alessio Atzeni](https://www.alessioatzeni.com/meteocons/). A [font conversion script](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47/blob/master/scripts/fontconvert.py) is included in the [LilyGo EPD47](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47) project and was used here.
 
 The NTP client is from [here](https://github.com/arduino-libraries/NTPClient) via [Arduino Libraries](https://github.com/arduino-libraries).
 
