@@ -64,26 +64,25 @@ const Rect_t WICON_AREA = {
 	.height = (int32_t)(VOLTAGE_Y - 30 - (CLOCK_Y + 1)),
 };
 
-int vref = 1100;
-
 struct tm now;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
 
-RTC_DATA_ATTR bool firstRun = true;
+RTC_DATA_ATTR bool redrawing = true;
 RTC_DATA_ATTR int minute = -1;
 RTC_DATA_ATTR int dayOfWeek = -1;
+RTC_DATA_ATTR int vref = 1100;
 RTC_DATA_ATTR float voltage = 0;
 RTC_DATA_ATTR char dow[20];
 RTC_DATA_ATTR char mdy[50];
 RTC_DATA_ATTR char tod[10];
-RTC_DATA_ATTR char volts[10];
+RTC_DATA_ATTR char volts[10] = " ";
 RTC_DATA_ATTR char wTemp[10];
 RTC_DATA_ATTR char wFeels[20];
 RTC_DATA_ATTR char wWind[25];
 RTC_DATA_ATTR char wHumidity[20];
-RTC_DATA_ATTR char wUpdated[20];
-RTC_DATA_ATTR char stime[40];
+RTC_DATA_ATTR char wUpdated[20] = " ";
+RTC_DATA_ATTR char stime[40] = " ";
 RTC_DATA_ATTR time_t lastNtpUpdate;
 RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
@@ -140,17 +139,17 @@ void drawString(int x, int y, String text, alignment align) {
 }
 
 void drawString(int x, int y, String text, String old_text, alignment align) {
-	if (!firstRun) {
+	if (!redrawing) {
 		clearString(x, y, old_text, align);
 	}
 	drawString(x, y, text, align);
 }
 
-void drawClock(bool redraw) {
+void drawClock() {
 
 	setFont(NK5772B);
 
-	if (redraw) {
+	if (redrawing && dayOfWeek > -1) {
 
 		drawString(CLOCK_X, CLOCK_Y, tod, LEFT);
 
@@ -191,12 +190,12 @@ void drawStartTime() {
 
 void updateClock() {
 	getLocalTime(&now, 0);
-	drawClock(false);
+	drawClock();
 }
 
-void drawVoltage(bool redraw) {
+void drawVoltage() {
 	setFont(NK5715B);
-	if (redraw) {
+	if (redrawing && strcmp(volts, " ") != 0) {
 		drawString(VOLTAGE_X, VOLTAGE_Y, volts, LEFT);
 	} else {
 		char _volts[10];
@@ -207,12 +206,18 @@ void drawVoltage(bool redraw) {
 }
 
 void updateVoltage() {
+	// Correct the ADC reference voltage
+	esp_adc_cal_characteristics_t adc_chars;
+	esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+	if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF) {
+		vref = adc_chars.vref;
+	}
 	delay(10); // Make adc measurement more accurate
 	uint16_t v = analogRead(BATT_PIN);
 	float _voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 	if (_voltage != voltage) {
 		voltage = _voltage;
-		drawVoltage(false);
+		drawVoltage();
 	}
 	lastVoltageUpdate = waketime;
 }
@@ -311,25 +316,25 @@ String weatherIcon(String i) {
 	return icon;
 }
 
-void drawWeather(bool redraw) {
+void drawWeather() {
 
 	String icon = weatherIcon(w.icon);
-	if (redraw || wIcon != icon) {
+	if (redrawing || wIcon != icon) {
+		wIcon = icon;
 		setFont(Meteocons96);
-		if (redraw) {
+		if (redrawing) {
 			drawString(WICON_X, WICON_Y, wIcon, LEFT);
 		} else {
 			epd_clear_area(WICON_AREA);
-			drawString(WICON_X, WICON_Y, icon, LEFT);
-			wIcon = icon;
+			drawString(WICON_X, WICON_Y, wIcon, LEFT);
 		}
 	}
 
 	char _temp[10];
 	sprintf(_temp, "%.1fc", w.current_Temp);
-	if (redraw || strcmp(wTemp, _temp) != 0) {
+	if (redrawing || strcmp(wTemp, _temp) != 0) {
 		setFont(NK5748B);
-		if (redraw) {
+		if (redrawing) {
 			drawString(CTEMP_X, CTEMP_Y, _temp, LEFT);	
 		} else {
 			drawString(CTEMP_X, CTEMP_Y, _temp, wTemp, LEFT);
@@ -341,8 +346,8 @@ void drawWeather(bool redraw) {
 
 	char _feels[20];
 	sprintf(_feels, "Feels like %.1fc", w.feels_like);
-	if (redraw || strcmp(wFeels, _feels) != 0) {
-		if (redraw) {
+	if (redrawing || strcmp(wFeels, _feels) != 0) {
+		if (redrawing) {
 			drawString(FTEMP_X, FTEMP_Y, _feels, LEFT);
 		} else {
 			drawString(FTEMP_X, FTEMP_Y, _feels, wFeels, LEFT);
@@ -354,8 +359,8 @@ void drawWeather(bool redraw) {
 	int ws = w.wind_speed * 3.6;
 	String wd = windDirection(w.wind_direction);
 	sprintf(_wind, "Wind: %d km/h %s", ws, wd);
-	if (redraw || strcmp(wWind, _wind) != 0) {
-		if (redraw) {
+	if (redrawing || strcmp(wWind, _wind) != 0) {
+		if (redrawing) {
 			drawString(WIND_X, WIND_Y, _wind, RIGHT);
 		} else {
 			drawString(WIND_X, WIND_Y, _wind, wWind, RIGHT);
@@ -365,8 +370,8 @@ void drawWeather(bool redraw) {
 
 	char _humid[20];
 	sprintf(_humid, "Humidity: %d%%", w.humidity);
-	if (redraw || strcmp(wHumidity, _humid) != 0) {
-		if (redraw) {
+	if (redrawing || strcmp(wHumidity, _humid) != 0) {
+		if (redrawing) {
 			drawString(HUMID_X, HUMID_Y, _humid, RIGHT);
 		} else {
 			drawString(HUMID_X, HUMID_Y, _humid, wHumidity, RIGHT);
@@ -374,7 +379,7 @@ void drawWeather(bool redraw) {
 		}
 	}
 
-	if (redraw) {
+	if (redrawing && strcmp(wUpdated, " ") != 0) {
 		drawString(WUPDATE_X, WUPDATE_Y, wUpdated, RIGHT);	
 	} else {
 		struct tm now;
@@ -391,17 +396,19 @@ void updateWeather() {
 	enableWifi();
 	weather.updateStatus(&w);
 	disableWifi();
-	drawWeather(false);
+	drawWeather();
 	lastWeatherUpdate = waketime;
 }
 
 void redraw() {
+	redrawing = true;
 	epd_clear();
-	drawClock(true);
-	drawWeather(true);
-	drawVoltage(true);
+	drawClock();
+	drawWeather();
+	drawVoltage();
 	drawStartTime();
 	lastRedraw = waketime;
+	redrawing = false;
 }
 
 void setup() {
@@ -410,32 +417,27 @@ void setup() {
 	tzset(); // Assign the local timezone from setenv
 	disableCore0WDT(); // Network requests may block long enough to trigger watchdog
 
-	// Correct the ADC reference voltage
-	esp_adc_cal_characteristics_t adc_chars;
-	esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
-	if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF) {
-		vref = adc_chars.vref;
-	}
-
 	epd_init();
 	epd_poweron();
 
-	if (firstRun) {
+	if (redrawing) {
 
 		epd_clear();
 
 		ntpUpdate();
 		time(&waketime);
 
-		struct tm startTime;
-		getLocalTime(&startTime, 0);
-		strftime(stime, 40, "Running since %a %b %d %Y %H:%M", &startTime);
+		if (strcmp(stime, " ") == 0) {
+			struct tm startTime;
+			getLocalTime(&startTime, 0);
+			strftime(stime, 40, "Running since %a %b %d %Y %H:%M", &startTime);
+		}
 
 		updateVoltage();
-		updateWeather();
 		drawStartTime();
+		updateWeather();
 
-		firstRun = false;
+		redrawing = false;
 		lastNtpUpdate = waketime;
 		lastRedraw = waketime;
 
