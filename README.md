@@ -37,9 +37,9 @@ I'm using the variant of this display with a JST battery connector rather than t
 
 ### Power Consumption
 
-I initially used the Arduino [Ticker](https://www.arduino.cc/reference/en/libraries/ticker/) library, and then [TickTwo](https://github.com/sstaub/TickTwo) in order to schedule various timed events. It quickly became clear that the current consumption was unsuitable for a battery-powered device, even when turning WiFi off when it wasn't needed and limiting screen updates to a reasonable extent.
-
 The EPD is fully powered off between updates, including the obnoxious blue LED when on battery power.
+
+I initially used the Arduino [Ticker](https://www.arduino.cc/reference/en/libraries/ticker/) library, and then [TickTwo](https://github.com/sstaub/TickTwo) in order to schedule various timed events. It quickly became clear that the current consumption was unsuitable for a battery-powered device, even when turning WiFi off when it wasn't needed and limiting screen updates to a reasonable extent.
 
 #### Deep Sleep
 
