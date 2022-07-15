@@ -43,7 +43,7 @@ I initially used the Arduino [Ticker](https://www.arduino.cc/reference/en/librar
 
 I'm now putting the ESP32 into deep sleep mode when it can sit idle, waking it up once per minute to update the clock. (The sleep interval is recalculated each time, so that it'll update as close to the start of the next minute as possible.) In this scenario, the `loop()` function is never called, and everything happens in `setup()`. Values are stored in RTC memory to persist between sleep/wake cycles. Some good info on this topic was found [here](https://randomnerdtutorials.com/esp32-deep-sleep-arduino-ide-wake-up-sources/).
 
-The **clock** will update every minute, on the minute (ish), but there will be some slop among the other update intervals. They'll happen as scheduled (ish) but may lag by up to a minute. Bear this in mind if you're watching and expecting to see eg. a weather update at a particular time.
+The **clock** will update every minute, on the minute (ish), but there will be some slop among the other update intervals. They'll happen as scheduled (ish) but may lag by up to a minute, causing the schedule to drift over time. Bear this in mind if you're watching and expecting to see eg. a weather update at a particular time.
 
 #### Clearing and redrawing
 
