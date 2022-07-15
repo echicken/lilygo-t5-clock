@@ -50,6 +50,20 @@ const uint HUMID_Y = 400;
 const uint WUPDATE_X = WIND_X;
 const uint WUPDATE_Y = 450;
 
+/**
+ * WICON_AREA is used when erasing the weather icon prior to redrawing.
+ * I may have messed up when generating the Meteocons font, or it may just be
+ * that it's an unusual font. Either way, the clearString function wasn't
+ * consistently erasing the entire previous icon. Here we'll just define a
+ * large area that definitely eoncompasses the whole thing.
+ */
+const Rect_t WICON_AREA = {
+	.x = 1,
+	.y = (int32_t)(CLOCK_Y + 1),
+	.width = (int32_t)(CTEMP_X - 1),
+	.height = (int32_t)(VOLTAGE_Y - 30 - (CLOCK_Y + 1)),
+};
+
 int vref = 1100;
 
 struct tm now;
@@ -305,13 +319,7 @@ void drawWeather(bool redraw) {
 		if (redraw) {
 			drawString(WICON_X, WICON_Y, wIcon, LEFT);
 		} else {
-			Rect_t area = {
-				.x = 1,
-				.y = (int32_t)(CLOCK_Y + 1),
-				.width = (int32_t)(CTEMP_X - 1),
-				.height = (int32_t)(CTEMP_Y - (CLOCK_Y + 1)),
-			};
-			epd_clear_area(area);
+			epd_clear_area(WICON_AREA);
 			drawString(WICON_X, WICON_Y, icon, LEFT);
 			wIcon = icon;
 		}
