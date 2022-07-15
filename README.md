@@ -49,13 +49,17 @@ The **clock** will update every minute, on the minute (ish), but there will be s
 
 ##### Buttons
 
-You can wake the ESP32 from deep sleep when *one* button is pressed, whether that switches its input from low to high or vice versa.
+The leftmost button (when viewing the display-side of the device in landscape orientation), labelled S5, pulls the ESP32's RST line to ground when pressed. This restarts the device.
 
-You can wake the ESP32 from deep sleep when *any* button is pressed, but only if the input switches from low to high. Unfortunately the button inputs on this device have pull-up resistors on them and are active-low.
+I've considered assigning functions to the rightmost three buttons, but the design of this device makes that a hassle when combined with deep sleep.
 
-In order to use the buttons, I'd need to dedicate one as a "wake up" button. When the device wakes, it'd need to check if it woke because this button was pressed. If so, it would wait for further input, presumably with a time limit. At this point we can read the next button press, if any, and act accordingly.
+I've decided it's sufficient to be able to restart the device if something goes wrong. To that end I plan on leaving a hole in the enclosure so I can press the reset button with a pen or something if needed.
 
-Okay, now that I've written this section I've just about talked myself into implementing it. Call that a to-do item for now.
+###### More Button Musing
+
+The second-leftmost button is connected to the ESP32's GPIO 0, probably to put it into flash mode when pressed along with RST, but I can't remember offhand.
+
+The remaining three buttons are active low. Their GPIOs have pull-up resistors on them. The ESP32 has two GPIO-triggered wake-up modes. The first, ext0, requires you to assign one GPIO to trigger wake-up, and will wake the device whether this goes from low to high or high to low. The second, ext1, will wake the device if one of several GPIOs goes from low to high; unfortunately all three of our available switches are already pulled up. In order to use multiple buttons, we'd need to use ext0 to wake the device, then enter an input-handling routine for some amount of time. Not difficult to do, but not worth the hassle in my opinion.
 
 #### Clearing and redrawing
 
