@@ -68,7 +68,8 @@ struct tm now;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
 
-RTC_DATA_ATTR bool redrawing = true;
+RTC_DATA_ATTR bool firstRun = true;
+RTC_DATA_ATTR bool redrawing = false;
 RTC_DATA_ATTR int minute = -1;
 RTC_DATA_ATTR int dayOfWeek = -1;
 RTC_DATA_ATTR int vref = 1100;
@@ -76,13 +77,13 @@ RTC_DATA_ATTR float voltage = 0;
 RTC_DATA_ATTR char dow[20];
 RTC_DATA_ATTR char mdy[50];
 RTC_DATA_ATTR char tod[10];
-RTC_DATA_ATTR char volts[10] = " ";
+RTC_DATA_ATTR char volts[10];
 RTC_DATA_ATTR char wTemp[10];
 RTC_DATA_ATTR char wFeels[20];
 RTC_DATA_ATTR char wWind[25];
 RTC_DATA_ATTR char wHumidity[20];
-RTC_DATA_ATTR char wUpdated[20] = " ";
-RTC_DATA_ATTR char stime[40] = " ";
+RTC_DATA_ATTR char wUpdated[20];
+RTC_DATA_ATTR char stime[40];
 RTC_DATA_ATTR time_t lastNtpUpdate;
 RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
@@ -139,7 +140,7 @@ void drawString(int x, int y, String text, alignment align) {
 }
 
 void drawString(int x, int y, String text, String old_text, alignment align) {
-	if (!redrawing) {
+	if (!redrawing && !firstRun) {
 		clearString(x, y, old_text, align);
 	}
 	drawString(x, y, text, align);
@@ -149,10 +150,9 @@ void drawClock() {
 
 	setFont(NK5772B);
 
-	if (redrawing && dayOfWeek > -1) {
+	if (redrawing) {
 
 		drawString(CLOCK_X, CLOCK_Y, tod, LEFT);
-
 		setFont(NK5724B);
 		drawString(DATE_X, DATE_Y1, dow, RIGHT);
 		drawString(DATE_X, DATE_Y2, mdy, RIGHT);
@@ -195,7 +195,7 @@ void updateClock() {
 
 void drawVoltage() {
 	setFont(NK5715B);
-	if (redrawing && strcmp(volts, " ") != 0) {
+	if (redrawing) {
 		drawString(VOLTAGE_X, VOLTAGE_Y, volts, LEFT);
 	} else {
 		char _volts[10];
@@ -379,7 +379,7 @@ void drawWeather() {
 		}
 	}
 
-	if (redrawing && strcmp(wUpdated, " ") != 0) {
+	if (redrawing) {
 		drawString(WUPDATE_X, WUPDATE_Y, wUpdated, RIGHT);	
 	} else {
 		struct tm now;
@@ -420,24 +420,22 @@ void setup() {
 	epd_init();
 	epd_poweron();
 
-	if (redrawing) {
+	if (firstRun) {
 
 		epd_clear();
 
 		ntpUpdate();
 		time(&waketime);
 
-		if (strcmp(stime, " ") == 0) {
-			struct tm startTime;
-			getLocalTime(&startTime, 0);
-			strftime(stime, 40, "Running since %a %b %d %Y %H:%M", &startTime);
-		}
+		struct tm startTime;
+		getLocalTime(&startTime, 0);
+		strftime(stime, 40, "Running since %a %b %d %Y %H:%M", &startTime);
 
 		updateVoltage();
 		drawStartTime();
 		updateWeather();
 
-		redrawing = false;
+		firstRun = false;
 		lastNtpUpdate = waketime;
 		lastRedraw = waketime;
 
