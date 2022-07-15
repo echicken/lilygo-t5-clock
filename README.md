@@ -47,6 +47,16 @@ I'm now putting the ESP32 into deep sleep mode when it can sit idle, waking it u
 
 The **clock** will update every minute, on the minute (ish), but there will be some slop among the other update intervals. They'll happen as scheduled (ish) but may lag by up to a minute, causing the schedule to drift over time. Bear this in mind if you're watching and expecting to see eg. a weather update at a particular time.
 
+##### Buttons
+
+You can wake the ESP32 from deep sleep when *one* button is pressed, whether that switches its input from low to high or vice versa.
+
+You can wake the ESP32 from deep sleep when *any* button is pressed, but only if the input switches from low to high. Unfortunately the button inputs on this device have pull-up resistors on them and are active-low.
+
+In order to use the buttons, I'd need to dedicate one as a "wake up" button. When the device wakes, it'd need to check if it woke because this button was pressed. If so, it would wait for further input, presumably with a time limit. At this point we can read the next button press, if any, and act accordingly.
+
+Okay, now that I've written this section I've just about talked myself into implementing it. Call that a to-do item for now.
+
 #### Clearing and redrawing
 
 Partial updating of the screen is used for speed and, presumably, to reduce power consumption. Steps are taken to update parts of the screen only as needed. This could probably be taken a bit further by updating single characters (eg. if only the minute has changed), but I'm not sure it's worth the bother, and it'd probably limit us to monospaced fonts. For now, the entire hours-and-minutes field is cleared and redrawn when the time changes even by a minute, likewise the date, the temperature, and so on.
