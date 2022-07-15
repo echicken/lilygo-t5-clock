@@ -1,5 +1,8 @@
 # lilygo-t5-clock
-Time, date, and weather on a LILYGO T5-4.7 ESP32 e-paper display. Developed with Platform.IO & Arduino framework.
+
+Time, date, and weather on a LILYGO T5-4.7 ESP32 e-paper display.
+
+Developed with Platform.IO & Arduino framework.
 
 ![A picture of the clock](/epd_clock.png)
 
@@ -34,6 +37,8 @@ The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Hel
 ### Enclosure
 
 I'm using the variant of this display with a JST battery connector rather than the 18650 version. The intention is to keep it thin and flat, to be used as a wall clock. Every case I've seen so far is thicc or has a hump on the back for a big round battery, so I'll design my own and add it here once I've settled on a suitable battery.
+
+I am currently testing with [this battery](https://www.amazon.ca/gp/product/B091Y3TW9F) and am hoping that the runtime will be acceptable.
 
 ### Power Consumption
 
