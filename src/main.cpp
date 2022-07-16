@@ -318,25 +318,25 @@ String weatherIcon(String i) {
 
 void drawWeather() {
 
-	String icon = weatherIcon(w.icon);
-	if (redrawing || wIcon != icon) {
-		wIcon = icon;
-		setFont(Meteocons96);
-		if (redrawing) {
-			drawString(WICON_X, WICON_Y, wIcon, LEFT);
-		} else {
+	setFont(Meteocons96);
+	if (redrawing) {
+		drawString(WICON_X, WICON_Y, wIcon, LEFT);
+	} else {
+		String icon = weatherIcon(w.icon);
+		if (wIcon != icon) {
+			wIcon = icon;
 			epd_clear_area(WICON_AREA);
 			drawString(WICON_X, WICON_Y, wIcon, LEFT);
 		}
 	}
 
-	char _temp[10];
-	sprintf(_temp, "%.1fc", w.current_Temp);
-	if (redrawing || strcmp(wTemp, _temp) != 0) {
-		setFont(NK5748B);
-		if (redrawing) {
-			drawString(CTEMP_X, CTEMP_Y, _temp, LEFT);	
-		} else {
+	setFont(NK5715B);
+	if (redrawing) {
+		drawString(CTEMP_X, CTEMP_Y, wTemp, LEFT);
+	} else {
+		char _temp[10];
+		sprintf(_temp, "%.1fc", w.current_Temp);
+		if (strcmp(wTemp, _temp) != 0) {
 			drawString(CTEMP_X, CTEMP_Y, _temp, wTemp, LEFT);
 			strcpy(wTemp, _temp);
 		}
@@ -344,36 +344,36 @@ void drawWeather() {
 
 	setFont(NK5715B);
 
-	char _feels[20];
-	sprintf(_feels, "Feels like %.1fc", w.feels_like);
-	if (redrawing || strcmp(wFeels, _feels) != 0) {
-		if (redrawing) {
-			drawString(FTEMP_X, FTEMP_Y, _feels, LEFT);
-		} else {
+	if (redrawing) {
+		drawString(FTEMP_X, FTEMP_Y, wFeels, LEFT);
+	} else {
+		char _feels[20];
+		sprintf(_feels, "Feels like %.1fc", w.feels_like);
+		if (strcmp(wFeels, _feels) != 0) {
 			drawString(FTEMP_X, FTEMP_Y, _feels, wFeels, LEFT);
 			strcpy(wFeels, _feels);
 		}
 	}
 
-	char _wind[25];
-	int ws = w.wind_speed * 3.6;
-	String wd = windDirection(w.wind_direction);
-	sprintf(_wind, "Wind: %d km/h %s", ws, wd);
-	if (redrawing || strcmp(wWind, _wind) != 0) {
-		if (redrawing) {
-			drawString(WIND_X, WIND_Y, _wind, RIGHT);
-		} else {
+	if (redrawing) {
+		drawString(WIND_X, WIND_Y, wWind, RIGHT);
+	} else {
+		char _wind[25];
+		int ws = w.wind_speed * 3.6;
+		String wd = windDirection(w.wind_direction);
+		sprintf(_wind, "Wind: %d km/h %s", ws, wd);
+		if (strcmp(wWind, _wind) != 0) {
 			drawString(WIND_X, WIND_Y, _wind, wWind, RIGHT);
 			strcpy(wWind, _wind);
 		}
 	}
 
-	char _humid[20];
-	sprintf(_humid, "Humidity: %d%%", w.humidity);
-	if (redrawing || strcmp(wHumidity, _humid) != 0) {
-		if (redrawing) {
-			drawString(HUMID_X, HUMID_Y, _humid, RIGHT);
-		} else {
+	if (redrawing) {
+		drawString(HUMID_X, HUMID_Y, wHumidity, RIGHT);
+	} else {
+		char _humid[20];
+		sprintf(_humid, "Humidity: %d%%", w.humidity);
+		if (strcmp(wHumidity, _humid) != 0) {
 			drawString(HUMID_X, HUMID_Y, _humid, wHumidity, RIGHT);
 			strcpy(wHumidity, _humid);
 		}
