@@ -64,16 +64,24 @@ const Rect_t WICON_AREA = {
 	.height = (int32_t)(VOLTAGE_Y - 30 - (CLOCK_Y + 1)),
 };
 
+bool DRAW_DATE = false;
+bool DRAW_WEATHER = false;
+bool DRAW_WICON = false;
+bool DRAW_TEMP = false;
+bool DRAW_FTEMP = false;
+bool DRAW_WIND = false;
+bool DRAW_HUMIDITY = false;
+bool DRAW_VOLTAGE = false;
+
 struct tm now;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
 
 RTC_DATA_ATTR bool firstRun = true;
-RTC_DATA_ATTR bool redrawing = false;
 RTC_DATA_ATTR int minute = -1;
 RTC_DATA_ATTR int dayOfWeek = -1;
 RTC_DATA_ATTR int vref = 1100;
-RTC_DATA_ATTR float voltage = 0;
+RTC_DATA_ATTR float voltage = -1;
 RTC_DATA_ATTR char dow[20];
 RTC_DATA_ATTR char mdy[50];
 RTC_DATA_ATTR char tod[10];
@@ -90,11 +98,15 @@ RTC_DATA_ATTR time_t lastWeatherUpdate;
 RTC_DATA_ATTR time_t lastRedraw;
 RTC_DATA_ATTR String wIcon = ")";
 
-void updateClock();
-void updateVoltage();
-void ntpUpdate();
-void updateWeather();
-void redraw();
+char _tod[10];
+char _dow[20];
+char _mdy[50];
+char _volts[10];
+char _wTemp[10];
+char _wFeels[20];
+char _wWind[25];
+char _wHumidity[20];
+char _wUpdated[20];
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -140,47 +152,10 @@ void drawString(int x, int y, String text, alignment align) {
 }
 
 void drawString(int x, int y, String text, String old_text, alignment align) {
-	if (!redrawing && !firstRun) {
+	if (!firstRun) {
 		clearString(x, y, old_text, align);
 	}
 	drawString(x, y, text, align);
-}
-
-void drawClock() {
-
-	setFont(NK5772B);
-
-	if (redrawing) {
-
-		drawString(CLOCK_X, CLOCK_Y, tod, LEFT);
-		setFont(NK5724B);
-		drawString(DATE_X, DATE_Y1, dow, RIGHT);
-		drawString(DATE_X, DATE_Y2, mdy, RIGHT);
-
-	} else {
-
-		char _tod[10];
-		strftime(_tod, 10, "%H:%M", &now);
-		drawString(CLOCK_X, CLOCK_Y, _tod, tod, LEFT);
-		strcpy(tod, _tod);
-
-		setFont(NK5724B);
-
-		if (dayOfWeek != now.tm_wday) {
-			char _dow[20];
-			strftime(_dow, 20, "%A", &now);
-			drawString(DATE_X, DATE_Y1, _dow, dow, RIGHT);
-			dayOfWeek = now.tm_wday;
-			strcpy(dow, _dow);
-
-			char _mdy[50];
-			strftime(_mdy, 50, "%b %d %Y", &now);
-			drawString(DATE_X, DATE_Y2, _mdy, mdy, RIGHT);
-			strcpy(mdy, _mdy);
-		}
-
-	}
-
 }
 
 void drawStartTime() {
@@ -188,24 +163,41 @@ void drawStartTime() {
 	drawString(START_TIME_X, START_TIME_Y, stime, stime, RIGHT);
 }
 
-void updateClock() {
+void drawClock() {
+	setFont(NK5772B);
+	drawString(CLOCK_X, CLOCK_Y, _tod, tod, LEFT);
+	if (DRAW_DATE) {
+		setFont(NK5724B);
+		drawString(DATE_X, DATE_Y1, _dow, dow, RIGHT);
+		drawString(DATE_X, DATE_Y2, _mdy, mdy, RIGHT);
+	}
+}
+
+void getClock() {
 	getLocalTime(&now, 0);
-	drawClock();
+	strftime(_tod, 10, "%H:%M", &now);
+	if (dayOfWeek != now.tm_wday) {
+		DRAW_DATE = true;
+		dayOfWeek = now.tm_wday;
+		strftime(_dow, 20, "%A", &now);
+		strftime(_mdy, 50, "%b %d %Y", &now);
+	}
+}
+
+void setClock() {
+	strcpy(tod, _tod);
+	if (DRAW_DATE) {
+		strcpy(dow, _dow);
+		strcpy(mdy, _mdy);
+	}
 }
 
 void drawVoltage() {
 	setFont(NK5715B);
-	if (redrawing) {
-		drawString(VOLTAGE_X, VOLTAGE_Y, volts, LEFT);
-	} else {
-		char _volts[10];
-		sprintf(_volts, "%.2fV", voltage);
-		drawString(VOLTAGE_X, VOLTAGE_Y, _volts, volts, LEFT);
-		strcpy(volts, _volts);
-	}
+	drawString(VOLTAGE_X, VOLTAGE_Y, _volts, volts, LEFT);
 }
 
-void updateVoltage() {
+void getVoltage() {
 	// Correct the ADC reference voltage
 	esp_adc_cal_characteristics_t adc_chars;
 	esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
@@ -216,10 +208,15 @@ void updateVoltage() {
 	uint16_t v = analogRead(BATT_PIN);
 	float _voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 	if (_voltage != voltage) {
+		DRAW_VOLTAGE = true;
 		voltage = _voltage;
-		drawVoltage();
+		sprintf(_volts, "%.2fV", voltage);
 	}
 	lastVoltageUpdate = waketime;
+}
+
+void setVoltage() {
+	strcpy(volts, _volts);
 }
 
 void enableWifi() {
@@ -246,7 +243,6 @@ void ntpUpdate() {
 	disableWifi();
 
 	setUnixtime(timeClient.getEpochTime());
-	updateClock();
 
 	lastNtpUpdate = waketime;
 
@@ -319,96 +315,103 @@ String weatherIcon(String i) {
 void drawWeather() {
 
 	setFont(Meteocons96);
-	if (redrawing) {
+	String icon = weatherIcon(w.icon);
+	if (DRAW_WICON) {
+		epd_clear_area(WICON_AREA);
 		drawString(WICON_X, WICON_Y, wIcon, LEFT);
-	} else {
-		String icon = weatherIcon(w.icon);
-		if (wIcon != icon) {
-			wIcon = icon;
-			epd_clear_area(WICON_AREA);
-			drawString(WICON_X, WICON_Y, wIcon, LEFT);
-		}
 	}
 
-	setFont(NK5715B);
-	if (redrawing) {
-		drawString(CTEMP_X, CTEMP_Y, wTemp, LEFT);
-	} else {
-		char _temp[10];
-		sprintf(_temp, "%.1fc", w.current_Temp);
-		if (strcmp(wTemp, _temp) != 0) {
-			drawString(CTEMP_X, CTEMP_Y, _temp, wTemp, LEFT);
-			strcpy(wTemp, _temp);
-		}
+	setFont(NK5748B);
+
+	if (DRAW_TEMP) {
+		drawString(CTEMP_X, CTEMP_Y, _wTemp, wTemp, LEFT);
 	}
 
 	setFont(NK5715B);
 
-	if (redrawing) {
-		drawString(FTEMP_X, FTEMP_Y, wFeels, LEFT);
-	} else {
-		char _feels[20];
-		sprintf(_feels, "Feels like %.1fc", w.feels_like);
-		if (strcmp(wFeels, _feels) != 0) {
-			drawString(FTEMP_X, FTEMP_Y, _feels, wFeels, LEFT);
-			strcpy(wFeels, _feels);
-		}
+	if (DRAW_FTEMP) {
+		drawString(FTEMP_X, FTEMP_Y, _wFeels, wFeels, LEFT);
 	}
 
-	if (redrawing) {
-		drawString(WIND_X, WIND_Y, wWind, RIGHT);
-	} else {
-		char _wind[25];
-		int ws = w.wind_speed * 3.6;
-		String wd = windDirection(w.wind_direction);
-		sprintf(_wind, "Wind: %d km/h %s", ws, wd);
-		if (strcmp(wWind, _wind) != 0) {
-			drawString(WIND_X, WIND_Y, _wind, wWind, RIGHT);
-			strcpy(wWind, _wind);
-		}
+	if (DRAW_WIND) {
+		drawString(WIND_X, WIND_Y, _wWind, wWind, RIGHT);
 	}
 
-	if (redrawing) {
-		drawString(HUMID_X, HUMID_Y, wHumidity, RIGHT);
-	} else {
-		char _humid[20];
-		sprintf(_humid, "Humidity: %d%%", w.humidity);
-		if (strcmp(wHumidity, _humid) != 0) {
-			drawString(HUMID_X, HUMID_Y, _humid, wHumidity, RIGHT);
-			strcpy(wHumidity, _humid);
-		}
+	if (DRAW_HUMIDITY) {
+		drawString(HUMID_X, HUMID_Y, _wHumidity, wHumidity, RIGHT);
 	}
 
-	if (redrawing) {
-		drawString(WUPDATE_X, WUPDATE_Y, wUpdated, RIGHT);	
-	} else {
-		struct tm now;
-		getLocalTime(&now, 0);
-		char _updated[20];
-		strftime(_updated, 20, "Updated: %H:%M", &now);
-		drawString(WUPDATE_X, WUPDATE_Y, _updated, wUpdated, RIGHT);
-		strcpy(wUpdated, _updated);
-	}
+	drawString(WUPDATE_X, WUPDATE_Y, _wUpdated, wUpdated, RIGHT);
 
 }
 
-void updateWeather() {
+void getWeather() {
+
 	enableWifi();
 	weather.updateStatus(&w);
 	disableWifi();
-	drawWeather();
+
 	lastWeatherUpdate = waketime;
+
+	String icon = weatherIcon(w.icon);
+	if (wIcon != icon) {
+		wIcon = icon;
+		DRAW_WEATHER = true;
+		DRAW_WICON = true;
+	}
+
+	sprintf(_wTemp, "%.1fc", w.current_Temp);
+	if (strcmp(wTemp, _wTemp) != 0) {
+		DRAW_WEATHER = true;
+		DRAW_TEMP = true;
+	}
+
+	sprintf(_wFeels, "Feels like %.1fc", w.feels_like);
+	if (strcmp(wFeels, _wFeels) != 0) {
+		DRAW_WEATHER = true;
+		DRAW_FTEMP = true;
+	}
+
+	int ws = w.wind_speed * 3.6;
+	String wd = windDirection(w.wind_direction);
+	sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
+	if (strcmp(wWind, _wWind) != 0) {
+		DRAW_WEATHER = true;
+		DRAW_WIND = true;
+	}
+
+	sprintf(_wHumidity, "Humidity: %d%%", w.humidity);
+	if (strcmp(wHumidity, _wHumidity) != 0) {
+		DRAW_WEATHER = true;
+		DRAW_HUMIDITY = true;
+	}
+
+	struct tm now;
+	getLocalTime(&now, 0);
+	strftime(_wUpdated, 20, "Updated: %H:%M", &now);
+
 }
 
-void redraw() {
-	redrawing = true;
-	epd_clear();
-	drawClock();
-	drawWeather();
-	drawVoltage();
-	drawStartTime();
-	lastRedraw = waketime;
-	redrawing = false;
+void setWeather() {
+
+	if (DRAW_TEMP) {
+		strcpy(wTemp, _wTemp);
+	}
+
+	if (DRAW_FTEMP) {
+		strcpy(wFeels, _wFeels);
+	}
+	
+	if (DRAW_WIND) {
+		strcpy(wWind, _wWind);
+	}
+	
+	if (DRAW_HUMIDITY) {
+		strcpy(wHumidity, _wHumidity);
+	}
+	
+	strcpy(wUpdated, _wUpdated);
+
 }
 
 void setup() {
@@ -417,53 +420,71 @@ void setup() {
 	tzset(); // Assign the local timezone from setenv
 	disableCore0WDT(); // Network requests may block long enough to trigger watchdog
 
-	epd_init();
-	epd_poweron();
-
 	if (firstRun) {
 
-		epd_clear();
+		firstRun = false;
 
 		ntpUpdate();
 		time(&waketime);
+		lastNtpUpdate = waketime;
 
+		getClock();
+		getWeather();
+		getVoltage();
 		struct tm startTime;
 		getLocalTime(&startTime, 0);
 		strftime(stime, 40, "Running since %a %b %d %Y %H:%M", &startTime);
 
-		updateVoltage();
+		epd_init();
+		epd_poweron();
+		epd_clear();
+		drawClock();
+		drawWeather();
+		drawVoltage();
 		drawStartTime();
-		updateWeather();
+		epd_poweroff_all();
 
-		firstRun = false;
-		lastNtpUpdate = waketime;
-		lastRedraw = waketime;
+		setClock();
+		setWeather();
+		setVoltage();
 
 	} else {
 
 		time(&waketime);
 
 		if (waketime - lastNtpUpdate >= NTP_INTERVAL) {
-			ntpUpdate(); // Will updateClock()
-		} else {
-			updateClock();
+			ntpUpdate();
 		}
+		getClock();
 		
 		if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) {
-			updateVoltage();
+			getVoltage();
 		}
 		
 		if (waketime - lastWeatherUpdate >= WEATHER_INTERVAL) {
-			updateWeather();
+			getWeather();
 		}
 
-		if (waketime - lastRedraw >= REDRAW_INTERVAL) {
-			redraw();
+		epd_init();
+		epd_poweron();
+		drawClock();
+		if (DRAW_WEATHER) {
+			drawWeather();
 		}
-	
+		if (DRAW_VOLTAGE) {
+			drawVoltage();
+		}
+		epd_poweroff_all();
+
+		setClock();
+		if (DRAW_WEATHER) {
+			setWeather();
+		}
+		if (DRAW_VOLTAGE) {
+			setVoltage();
+		}
+
 	}
-
-	epd_poweroff_all();
 
 	time_t thisrun;
 	time(&thisrun);
