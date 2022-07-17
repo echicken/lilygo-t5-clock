@@ -71,8 +71,15 @@ bool DRAW_TEMP = false;
 bool DRAW_FTEMP = false;
 bool DRAW_WIND = false;
 bool DRAW_HUMIDITY = false;
-bool DRAW_VOLTAGE = false;
-
+char _tod[10];
+char _dow[20];
+char _mdy[50];
+char _volts[10];
+char _wTemp[10];
+char _wFeels[20];
+char _wWind[25];
+char _wHumidity[20];
+char _wUpdated[20];
 struct tm now;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
@@ -97,16 +104,6 @@ RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
 RTC_DATA_ATTR time_t lastRedraw;
 RTC_DATA_ATTR String wIcon = ")";
-
-char _tod[10];
-char _dow[20];
-char _mdy[50];
-char _volts[10];
-char _wTemp[10];
-char _wFeels[20];
-char _wWind[25];
-char _wHumidity[20];
-char _wUpdated[20];
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -193,11 +190,6 @@ void setClock() {
 }
 
 void drawVoltage() {
-	setFont(NK5715B);
-	drawString(VOLTAGE_X, VOLTAGE_Y, _volts, volts, LEFT);
-}
-
-void getVoltage() {
 	// Correct the ADC reference voltage
 	esp_adc_cal_characteristics_t adc_chars;
 	esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
@@ -208,15 +200,13 @@ void getVoltage() {
 	uint16_t v = analogRead(BATT_PIN);
 	float _voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 	if (_voltage != voltage) {
-		DRAW_VOLTAGE = true;
 		voltage = _voltage;
 		sprintf(_volts, "%.2fV", voltage);
+		setFont(NK5715B);
+		drawString(VOLTAGE_X, VOLTAGE_Y, _volts, volts, LEFT);
+		strcpy(volts, _volts);
 	}
 	lastVoltageUpdate = waketime;
-}
-
-void setVoltage() {
-	strcpy(volts, _volts);
 }
 
 void enableWifi() {
@@ -430,7 +420,6 @@ void setup() {
 
 		getClock();
 		getWeather();
-		getVoltage();
 		struct tm startTime;
 		getLocalTime(&startTime, 0);
 		strftime(stime, 40, "Running since %a %b %d %Y %H:%M", &startTime);
@@ -446,7 +435,6 @@ void setup() {
 
 		setClock();
 		setWeather();
-		setVoltage();
 
 	} else {
 
@@ -456,11 +444,7 @@ void setup() {
 			ntpUpdate();
 		}
 		getClock();
-		
-		if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) {
-			getVoltage();
-		}
-		
+	
 		if (waketime - lastWeatherUpdate >= WEATHER_INTERVAL) {
 			getWeather();
 		}
@@ -471,7 +455,7 @@ void setup() {
 		if (DRAW_WEATHER) {
 			drawWeather();
 		}
-		if (DRAW_VOLTAGE) {
+		if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) {
 			drawVoltage();
 		}
 		epd_poweroff_all();
@@ -479,9 +463,6 @@ void setup() {
 		setClock();
 		if (DRAW_WEATHER) {
 			setWeather();
-		}
-		if (DRAW_VOLTAGE) {
-			setVoltage();
 		}
 
 	}
