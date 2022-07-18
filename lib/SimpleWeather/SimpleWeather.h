@@ -32,6 +32,8 @@ class OpenWeather {
 		OpenWeather(String Key, String City, boolean forecast);
 		void updateStatus(weatherData *w);
 		String getResponse();
+		String getWindDirection(int deg);
+		String getIcon(String i);
 	private:
 		String _Response;
 		String _url;

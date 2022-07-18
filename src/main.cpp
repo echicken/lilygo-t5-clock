@@ -240,74 +240,9 @@ void ntpUpdate() {
 
 }
 
-String windDirection(int deg) {
-    String ret = "";
-    if (deg >= 337.5 || deg < 22.5) {
-        ret = "N";
-    } else if (deg < 67.5) {
-        ret = "NE";
-    } else if (deg < 112.5) {
-        ret = "E";
-    } else if (deg < 157.5) {
-        ret = "SE";
-    } else if (deg < 202.5) {
-        ret = "S";
-    } else if (deg < 247.5) {
-        ret = "SW";
-    } else if (deg < 292.5) {
-        ret = "W";
-    } else if (deg < 337.5) {
-        ret = "NW";
-    }
-    return ret;
-}
-
-String weatherIcon(String i) {
-	String icon = "B";
-	if (i == "01d") {
-		icon = "B";
-	} else if (i == "01n") {
-		icon = "C";
-	} else if (i == "02d") {
-		icon = "H";
-	} else if (i == "02n") {
-		icon = "4";
-	} else if (i == "03d") {
-		icon = "N";
-	} else if (i == "03n") {
-		icon = "5";
-	} else if (i == "04d") {
-		icon = "Y";
-	} else if (i == "04n") {
-		icon = "Y";
-	} else if (i == "09d") {
-		icon = "Q";
-	} else if (i == "09n") {
-		icon = "7";
-	} else if (i == "10d") {
-		icon = "R";
-	} else if (i == "10n") {
-		icon = "8";
-	} else if (i == "11d") {
-		icon = "O";
-	} else if (i == "11n") {
-		icon = "6";
-	} else if (i == "13d") {
-		icon = "W";
-	} else if (i == "13n") {
-		icon = "#";
-	} else if (i == "50d") {
-		icon = "M";
-	} else if (i == "50n") {
-		icon = "M";
-	}
-	return icon;
-}
-
 void drawWeather() {
 
 	setFont(Meteocons96);
-	String icon = weatherIcon(w.icon);
 	if (DRAW_WICON) {
 		epd_clear_area(WICON_AREA);
 		drawString(WICON_X, WICON_Y, wIcon, LEFT);
@@ -345,7 +280,7 @@ void getWeather() {
 
 	lastWeatherUpdate = waketime;
 
-	String icon = weatherIcon(w.icon);
+	String icon = weather.getIcon(w.icon);
 	if (wIcon != icon) {
 		wIcon = icon;
 		DRAW_WEATHER = true;
@@ -365,7 +300,7 @@ void getWeather() {
 	}
 
 	int ws = w.wind_speed * 3.6;
-	String wd = windDirection(w.wind_direction);
+	String wd = weather.getWindDirection(w.wind_direction);
 	sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
 	if (strcmp(wWind, _wWind) != 0) {
 		DRAW_WEATHER = true;
