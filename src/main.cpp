@@ -275,47 +275,51 @@ void drawWeather() {
 void getWeather() {
 
 	enableWifi();
-	weather.updateStatus(&w);
+	bool updated = weather.updateStatus(&w);
 	disableWifi();
 
 	lastWeatherUpdate = waketime;
 
-	String icon = weather.getIcon(w.icon);
-	if (wIcon != icon) {
-		wIcon = icon;
-		DRAW_WEATHER = true;
-		DRAW_WICON = true;
-	}
+	if (updated) {
 
-	sprintf(_wTemp, "%.1fc", w.current_Temp);
-	if (strcmp(wTemp, _wTemp) != 0) {
-		DRAW_WEATHER = true;
-		DRAW_TEMP = true;
-	}
+		String icon = weather.getIcon(w.icon);
+		if (wIcon != icon) {
+			wIcon = icon;
+			DRAW_WEATHER = true;
+			DRAW_WICON = true;
+		}
 
-	sprintf(_wFeels, "Feels like %.1fc", w.feels_like);
-	if (strcmp(wFeels, _wFeels) != 0) {
-		DRAW_WEATHER = true;
-		DRAW_FTEMP = true;
-	}
+		sprintf(_wTemp, "%.1fc", w.current_Temp);
+		if (strcmp(wTemp, _wTemp) != 0) {
+			DRAW_WEATHER = true;
+			DRAW_TEMP = true;
+		}
 
-	int ws = w.wind_speed * 3.6;
-	String wd = weather.getWindDirection(w.wind_direction);
-	sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
-	if (strcmp(wWind, _wWind) != 0) {
-		DRAW_WEATHER = true;
-		DRAW_WIND = true;
-	}
+		sprintf(_wFeels, "Feels like %.1fc", w.feels_like);
+		if (strcmp(wFeels, _wFeels) != 0) {
+			DRAW_WEATHER = true;
+			DRAW_FTEMP = true;
+		}
 
-	sprintf(_wHumidity, "Humidity: %d%%", w.humidity);
-	if (strcmp(wHumidity, _wHumidity) != 0) {
-		DRAW_WEATHER = true;
-		DRAW_HUMIDITY = true;
-	}
+		int ws = w.wind_speed * 3.6;
+		String wd = weather.getWindDirection(w.wind_direction);
+		sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
+		if (strcmp(wWind, _wWind) != 0) {
+			DRAW_WEATHER = true;
+			DRAW_WIND = true;
+		}
 
-	struct tm now;
-	getLocalTime(&now, 0);
-	strftime(_wUpdated, 20, "Updated: %H:%M", &now);
+		sprintf(_wHumidity, "Humidity: %d%%", w.humidity);
+		if (strcmp(wHumidity, _wHumidity) != 0) {
+			DRAW_WEATHER = true;
+			DRAW_HUMIDITY = true;
+		}
+
+		struct tm now;
+		getLocalTime(&now, 0);
+		strftime(_wUpdated, 20, "Updated: %H:%M", &now);
+	
+	}
 
 }
 
