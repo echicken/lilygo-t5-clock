@@ -31,7 +31,6 @@ void OpenWeather::updateStatus(weatherData *w){
 	const size_t capacity = 2*JSON_ARRAY_SIZE(1) + JSON_ARRAY_SIZE(2) + 6*JSON_OBJECT_SIZE(1) + 3*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(5) + 5*JSON_OBJECT_SIZE(8) + 570;
 	httpsClient.setInsecure();
 	httpsClient.setTimeout(15000);
-	delay(1000); // ?
 
 	int r = 0;
 	while ((!httpsClient.connect(openweather, httpsPort)) && (r < 30)) {
