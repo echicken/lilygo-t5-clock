@@ -15,7 +15,7 @@ Create a file at `src/config.h` and populate it with the following:
 #define WIFI_PASS "Your WiFi password goes here"
 #define OWM_KEY "Your OpenWeatherMap API key goes here"
 #define OWM_LOCATION "Toronto,ca"        // City and country code
-#define TZ_INFO "EST5EDT,M3.2.0,M11.1.0" // "America/Toronto" https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+#define TZ_INFO "EST5EDT,M3.2.0,M11.1.0" // https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 #define VOLTAGE_INTERVAL 1800 // Seconds between battery voltage updates
 #define NTP_INTERVAL	 3600 // Seconds between NTP updates
 #define WEATHER_INTERVAL 1800 // Seconds between weather updates
@@ -28,9 +28,11 @@ Customize as needed.
 
 Get your OpenWeatherMap API key [here](https://openweathermap.org/api).
 
+I can't find a list of named locations (city, country code as in `OWM_LOCATION`) for use with OpenWeatherMap, but as luck would have it they know about my city. It'd be trivial to allow lookup by latitude and longitude instead, so let me know if you need this feature; I won't bother for now since I don't need it.
+
 The NTP update interval may be unnecessarily short by default. Would be worth trying different values and checking the time against a known good clock.
 
-The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Helps to get rid of ghosting and clean up the display, but may not be necessary - it's a bit of a holdover from an earlier stage of this project. Would be worth increasing this and seeing if the display suffers for it over time.
+The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Helps to get rid of ghosting and clean up the display, as parts that should be blank (white) tend to darken over time, and garbage occasionally appears in unexpected places.
 
 ## Design Notes
 
@@ -54,7 +56,7 @@ The **clock** will update every minute, on the minute (ish), but there will be s
 
 ##### Buttons
 
-The leftmost button (when viewing the display-side of the device in landscape orientation), labelled S5, pulls the ESP32's RST line to ground when pressed. This restarts the device.
+The leftmost button (viewing the display-side in landscape orientation), labelled S5, pulls the ESP32's RST line to ground. This restarts the device.
 
 I've considered assigning functions to the rightmost three buttons, but the design of this device makes that a hassle when combined with deep sleep.
 
