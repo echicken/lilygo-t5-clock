@@ -23,14 +23,13 @@ class OpenWeather {
 	public:
 		OpenWeather(String Key, String City); 
 		OpenWeather(String Key, float lat, float longi);
-		void updateStatus(weatherData *w);
+		bool updateStatus(weatherData *w);
 		String getResponse();
 		String getWindDirection(int deg);
 		String getIcon(String i);
 	private:
 		String _Response;
 		String _url;
-		boolean _forecast;
 };
 
 #endif

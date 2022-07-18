@@ -12,7 +12,7 @@ OpenWeather::OpenWeather(String Key, float lat, float longi){
 	_url = "/data/2.5/weather?lat=" + String(lat) + "&long=" + String(longi) + "&appid=" + Key +"&units=metric";
 }
 
-void OpenWeather::updateStatus(weatherData *w){
+bool OpenWeather::updateStatus(weatherData *w){
 
 	const char *openweather = "api.openweathermap.org";
 	const int httpsPort = 443;
@@ -22,12 +22,12 @@ void OpenWeather::updateStatus(weatherData *w){
 	httpsClient.setTimeout(15000);
 
 	int r = 0;
-	while ((!httpsClient.connect(openweather, httpsPort)) && (r < 30)) {
+	while ((!httpsClient.connect(openweather, httpsPort)) && (r < 4)) {
 		delay(100);
 		r++;
 	}
-	if (r > 29) {
-		return;
+	if (r > 3) {
+		return false;
 	}
 
 	httpsClient.print(String("GET ") + _url + " HTTP/1.1\r\n" + "Host: " + openweather + "\r\n" + "Connection: close\r\n\r\n");
@@ -45,7 +45,7 @@ void OpenWeather::updateStatus(weatherData *w){
 	DynamicJsonDocument doc(capacity);
 	DeserializationError err = deserializeJson(doc,_Response);
 	if (err.code() != DeserializationError::Ok) {
-		return;
+		return false;
 	}
 
 	w->icon = doc["weather"][0]["icon"].as<String>();
@@ -54,6 +54,8 @@ void OpenWeather::updateStatus(weatherData *w){
 	w->humidity = doc["main"]["humidity"].as<int>();
 	w->wind_speed = doc["wind"]["speed"].as<float>();
 	w->wind_direction = doc["wind"]["deg"].as<int>();
+
+	return true;
 
 }
 
