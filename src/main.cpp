@@ -83,9 +83,11 @@ bool DRAW_TEMP = false;
 bool DRAW_FTEMP = false;
 bool DRAW_WIND = false;
 bool DRAW_HUMIDITY = false;
+bool redrawing = false;
 char _tod[10];
 char _dow[20];
 char _mdy[50];
+char _wIcon[2];
 char _wTemp[10];
 char _wFeels[20];
 char _wWind[25];
@@ -104,6 +106,7 @@ RTC_DATA_ATTR float voltage = -1;
 RTC_DATA_ATTR char dow[20];
 RTC_DATA_ATTR char mdy[50];
 RTC_DATA_ATTR char tod[10];
+RTC_DATA_ATTR char wIcon[2];
 RTC_DATA_ATTR char wTemp[10];
 RTC_DATA_ATTR char wFeels[20];
 RTC_DATA_ATTR char wWind[25];
@@ -115,7 +118,6 @@ RTC_DATA_ATTR time_t lastNtpUpdate;
 RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
 RTC_DATA_ATTR time_t lastRedraw;
-RTC_DATA_ATTR String wIcon = ")";
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -169,11 +171,18 @@ void drawString(int x, int y, String text, String old_text, alignment align) {
 
 void drawClock() {
 	setFont(NK5772B);
-	drawString(CLOCK_X, CLOCK_Y, _tod, tod, LEFT);
-	if (DRAW_DATE) {
+	if (redrawing) {
+		drawString(CLOCK_X, CLOCK_Y, tod, LEFT);
 		setFont(NK5724B);
-		drawString(DATE_X, DATE_Y1, _dow, dow, RIGHT);
-		drawString(DATE_X, DATE_Y2, _mdy, mdy, RIGHT);
+		drawString(DATE_X, DATE_Y1, dow, RIGHT);
+		drawString(DATE_X, DATE_Y2, mdy, RIGHT);
+	} else {
+		drawString(CLOCK_X, CLOCK_Y, _tod, tod, LEFT);
+		if (DRAW_DATE) {
+			setFont(NK5724B);
+			drawString(DATE_X, DATE_Y1, _dow, dow, RIGHT);
+			drawString(DATE_X, DATE_Y2, _mdy, mdy, RIGHT);
+		}
 	}
 }
 
@@ -269,32 +278,46 @@ void ntpUpdate() {
 void drawWeather() {
 
 	setFont(Meteocons96);
-	if (DRAW_WICON) {
+	if (redrawing) {
+		drawString(WICON_X, WICON_Y, wIcon, LEFT);
+	} else if (DRAW_WICON) {
 		epd_clear_area(WICON_AREA);
 		drawString(WICON_X, WICON_Y, wIcon, LEFT);
 	}
 
 	setFont(NK5748B);
 
-	if (DRAW_TEMP) {
+	if (redrawing) {
+		drawString(CTEMP_X, CTEMP_Y, wTemp, LEFT);
+	} else if (DRAW_TEMP) {
 		drawString(CTEMP_X, CTEMP_Y, _wTemp, wTemp, LEFT);
 	}
 
 	setFont(NK5715B);
 
-	if (DRAW_FTEMP) {
+	if (redrawing) {
+		drawString(FTEMP_X, FTEMP_Y, wFeels, LEFT);
+	} else if (DRAW_FTEMP) {
 		drawString(FTEMP_X, FTEMP_Y, _wFeels, wFeels, LEFT);
 	}
 
-	if (DRAW_WIND) {
+	if (redrawing) {
+		drawString(WIND_X, WIND_Y, wWind, RIGHT);
+	} else if (DRAW_WIND) {
 		drawString(WIND_X, WIND_Y, _wWind, wWind, RIGHT);
 	}
 
-	if (DRAW_HUMIDITY) {
+	if (redrawing) {
+		drawString(HUMID_X, HUMID_Y, wHumidity, RIGHT);
+	} else if (DRAW_HUMIDITY) {
 		drawString(HUMID_X, HUMID_Y, _wHumidity, wHumidity, RIGHT);
 	}
 
-	drawString(WUPDATE_X, WUPDATE_Y, _wUpdated, wUpdated, RIGHT);
+	if (redrawing) {
+		drawString(WUPDATE_X, WUPDATE_Y, wUpdated, RIGHT);
+	} else {
+		drawString(WUPDATE_X, WUPDATE_Y, _wUpdated, wUpdated, RIGHT);
+	}
 
 }
 
@@ -308,9 +331,8 @@ void getWeather() {
 
 	if (updated) {
 
-		String icon = weather.getIcon(w.icon);
-		if (wIcon != icon) {
-			wIcon = icon;
+		sprintf(_wIcon, "%s", weather.getIcon(w.icon));
+		if (wIcon != _wIcon) {
 			DRAW_WEATHER = true;
 			DRAW_WICON = true;
 		}
@@ -351,6 +373,10 @@ void getWeather() {
 
 void setWeather() {
 
+	if (DRAW_WICON) {
+		strcpy(wIcon, _wIcon);
+	}
+
 	if (DRAW_TEMP) {
 		strcpy(wTemp, _wTemp);
 	}
@@ -372,12 +398,7 @@ void setWeather() {
 }
 
 void redraw() {
-	DRAW_DATE = true;
-	DRAW_WICON = true;
-	DRAW_TEMP = true;
-	DRAW_FTEMP = true;
-	DRAW_WIND = true;
-	DRAW_HUMIDITY = true;
+	redrawing = true;
 	epd_init();
 	epd_poweron();
 	epd_clear();
@@ -386,6 +407,7 @@ void redraw() {
 	drawVoltage();
 	epd_poweroff_all();
 	time(&lastRedraw);
+	redrawing = false;
 }
 
 void partialRedraw() {
@@ -411,10 +433,10 @@ void setup() {
 		firstRun = false;
 		ntpUpdate();
 		getClock();
-		getWeather();
-		redraw();
 		setClock();
+		getWeather();
 		setWeather();
+		redraw();
 	} else {
 
 		time(&waketime);
@@ -428,11 +450,11 @@ void setup() {
 			getWeather();
 		}
 
-		// if (waketime - lastRedraw >= REDRAW_INTERVAL) {
-		// 	redraw();
-		// } else {
+		if (waketime - lastRedraw >= REDRAW_INTERVAL) {
+			redraw();
+		} else {
 			partialRedraw();
-		// }
+		}
 
 		setClock();
 		if (DRAW_WEATHER) {
