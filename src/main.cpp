@@ -428,11 +428,11 @@ void setup() {
 			getWeather();
 		}
 
-		if (waketime - lastRedraw >= REDRAW_INTERVAL) {
-			redraw();
-		} else {
+		// if (waketime - lastRedraw >= REDRAW_INTERVAL) {
+		// 	redraw();
+		// } else {
 			partialRedraw();
-		}
+		// }
 
 		setClock();
 		if (DRAW_WEATHER) {
