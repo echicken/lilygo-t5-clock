@@ -38,11 +38,11 @@ The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Hel
 
 I'm using the variant of this display with a JST battery connector rather than the 18650 version. The intention is to keep it thin and flat, to be used as a wall clock. Every case I've seen so far is thicc or has a hump on the back for a big round battery, so I'll design my own and add it here once I've settled on a suitable battery.
 
-I am currently testing with [this battery](https://www.amazon.ca/gp/product/B091Y3TW9F) and am hoping that the runtime will be acceptable.
+I'm waiting for [this battery](https://www.amazon.ca/gp/product/B095BTSMYH?th=1), which is slightly smaller in width and height than the EPD, and is 10 mm thick. The less often I need to take this thing off the wall to recharge it, the better.
 
 ### Power Consumption
 
-The EPD is fully powered off between updates, including the obnoxious blue LED when on battery power.
+The EPD is fully powered off, along with the obnoxious blue LED, except when actively drawing. (The blue LED is always on when on USB power, but not on battery.)
 
 I initially used the Arduino [Ticker](https://www.arduino.cc/reference/en/libraries/ticker/) library, and then [TickTwo](https://github.com/sstaub/TickTwo) in order to schedule various timed events. It quickly became clear that the current consumption was unsuitable for a battery-powered device, even when turning WiFi off when it wasn't needed and limiting screen updates to a reasonable extent.
 
@@ -68,7 +68,7 @@ The remaining three buttons are active low. Their GPIOs have pull-up resistors o
 
 #### Clearing and redrawing
 
-Partial updating of the screen is used for speed and, presumably, to reduce power consumption. Steps are taken to update parts of the screen only as needed. This could probably be taken a bit further by updating single characters (eg. if only the minute has changed), but I'm not sure it's worth the bother, and it'd probably limit us to monospaced fonts. For now, the entire hours-and-minutes field is cleared and redrawn when the time changes even by a minute, likewise the date, the temperature, and so on.
+Partial updating of the screen is used for speed and, presumably, to reduce power consumption. Steps are taken to update parts of the screen only as needed. This could probably be taken a bit further by updating single characters (eg. if only the minute has changed), but I'm not sure it's worth the bother. For now, the entire hours-and-minutes field is cleared and redrawn when the time changes even by a minute, likewise the date, the temperature, and so on.
 
 ## Credits
 
