@@ -5,22 +5,11 @@
 #include "SimpleWeather.h"
 
 OpenWeather::OpenWeather(String Key, String City){
-	_forecast = false;
 	_url = "/data/2.5/weather?q=" + City + "&appid=" + Key +"&units=metric";
 }
 
 OpenWeather::OpenWeather(String Key, float lat, float longi){
-	_forecast = false;
 	_url = "/data/2.5/weather?lat=" + String(lat) + "&long=" + String(longi) + "&appid=" + Key +"&units=metric";
-}
-
-OpenWeather::OpenWeather(String Key, String City, boolean forecast){
-	_forecast = forecast;
-	if(!forecast) {
-		_url = "/data/2.5/weather?q=" + City + "&appid=" + Key +"&units=metric&cnt=1";
-	} else {
-		_url = "/data/2.5/forecast?q=" + City + "&appid=" + Key +"&units=metric&cnt=2";
-	}
 }
 
 void OpenWeather::updateStatus(weatherData *w){
@@ -59,38 +48,13 @@ void OpenWeather::updateStatus(weatherData *w){
 		return;
 	}
 
-	if(!_forecast){
-		w->description = doc["weather"][0]["description"].as<String>();
-		w->weather = doc["weather"][0]["main"].as<String>();
-		w->icon = doc["weather"][0]["icon"].as<String>();
-		w->id = doc["weather"][0]["id"].as<int>();
-		w->current_Temp = doc["main"]["temp"].as<float>();
-		w->feels_like = doc["main"]["feels_like"].as<float>();
-		w->min_temp = doc["main"]["temp_min"].as<float>();
-		w->max_temp = doc["main"]["temp_max"].as<float>();
-		w->humidity = doc["main"]["humidity"].as<int>();
-		w->wind_speed = doc["wind"]["speed"].as<float>();
-		w->wind_direction = doc["wind"]["deg"].as<int>();
-		if(w->id <700) {
-			w->rain = doc["rain"]["1h"].as<float>();
-		} else {
-			w->rain = 0;
-		}
-	} else {
-		// Currently set to get forecast 3 hours from now
-		w->description = doc["list"][1]["weather"][0]["description"].as<String>(); 
-		w->weather = doc["list"][1]["weather"][0]["main"].as<String>();
-		w->id = doc["list"][1]["weather"]["id"].as<int>();
-		w->current_Temp = doc["list"][1]["main"]["temp"].as<float>();
-		w->min_temp = doc["list"][1]["main"]["temp_min"].as<float>();
-		w->max_temp = doc["list"][1]["main"]["temp_max"].as<float>();
-		w->humidity = doc["list"][1]["main"]["temp_max"].as<float>();
-		if(w->id <700) {
-			w->rain = doc["list"][1]["rain"]["3h"].as<float>();
-		} else {
-			w->rain = 0;
-		}
-	}
+	w->icon = doc["weather"][0]["icon"].as<String>();
+	w->current_Temp = doc["main"]["temp"].as<float>();
+	w->feels_like = doc["main"]["feels_like"].as<float>();
+	w->humidity = doc["main"]["humidity"].as<int>();
+	w->wind_speed = doc["wind"]["speed"].as<float>();
+	w->wind_direction = doc["wind"]["deg"].as<int>();
+
 }
 
 String OpenWeather::getResponse() {
