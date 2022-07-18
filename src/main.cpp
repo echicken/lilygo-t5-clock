@@ -232,7 +232,7 @@ void drawVoltage() {
 			batt = _batt;
 		}
 	}
-	lastVoltageUpdate = waketime;
+	time(&lastVoltageUpdate);
 }
 
 void enableWifi() {
@@ -262,7 +262,7 @@ void ntpUpdate() {
 		setUnixtime(timeClient.getEpochTime());
 	}
 
-	lastNtpUpdate = waketime;
+	time(&lastNtpUpdate);
 
 }
 
@@ -304,7 +304,7 @@ void getWeather() {
 	bool updated = weather.updateStatus(&w);
 	disableWifi();
 
-	lastWeatherUpdate = waketime;
+	time(&lastWeatherUpdate);
 
 	if (updated) {
 
@@ -371,6 +371,36 @@ void setWeather() {
 
 }
 
+void redraw() {
+	DRAW_DATE = true;
+	DRAW_WICON = true;
+	DRAW_TEMP = true;
+	DRAW_FTEMP = true;
+	DRAW_WIND = true;
+	DRAW_HUMIDITY = true;
+	epd_init();
+	epd_poweron();
+	epd_clear();
+	drawClock();
+	drawWeather();
+	drawVoltage();
+	epd_poweroff_all();
+	time(&lastRedraw);
+}
+
+void partialRedraw() {
+	epd_init();
+	epd_poweron();
+	drawClock();
+	if (DRAW_WEATHER) {
+		drawWeather();
+	}
+	if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) {
+		drawVoltage();
+	}
+	epd_poweroff_all();
+}
+
 void setup() {
 
 	setenv("TZ", TZ_INFO, 1);
@@ -378,27 +408,13 @@ void setup() {
 	disableCore0WDT(); // Network requests may block long enough to trigger watchdog
 
 	if (firstRun) {
-
 		firstRun = false;
-
 		ntpUpdate();
-		time(&waketime);
-		lastNtpUpdate = waketime;
-
 		getClock();
 		getWeather();
-
-		epd_init();
-		epd_poweron();
-		epd_clear();
-		drawClock();
-		drawWeather();
-		drawVoltage();
-		epd_poweroff_all();
-
+		redraw();
 		setClock();
 		setWeather();
-
 	} else {
 
 		time(&waketime);
@@ -412,16 +428,11 @@ void setup() {
 			getWeather();
 		}
 
-		epd_init();
-		epd_poweron();
-		drawClock();
-		if (DRAW_WEATHER) {
-			drawWeather();
+		if (waketime - lastRedraw >= REDRAW_INTERVAL) {
+			redraw();
+		} else {
+			partialRedraw();
 		}
-		if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) {
-			drawVoltage();
-		}
-		epd_poweroff_all();
 
 		setClock();
 		if (DRAW_WEATHER) {
