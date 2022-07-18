@@ -20,6 +20,11 @@
 #include "WiFiUdp.h"
 #include <NTPClient.h>
 #include "SimpleWeather.h"
+#include "batt_100.h"
+#include "batt_75.h"
+#include "batt_50.h"
+#include "batt_25.h"
+#include "batt_0.h"
 
 #define BATT_PIN 36
 
@@ -33,8 +38,8 @@ const uint CLOCK_Y = 175;
 const uint DATE_X = EPD_WIDTH - H_MARGIN;
 const uint DATE_Y1 = 105;
 const uint DATE_Y2 = CLOCK_Y;
-const uint VOLTAGE_X = H_MARGIN;
-const uint VOLTAGE_Y = EPD_HEIGHT - V_MARGIN;
+const uint BATT_X = EPD_WIDTH - H_MARGIN - batt_100_width;
+const uint BATT_Y = EPD_HEIGHT - V_MARGIN - batt_100_height;
 const uint START_TIME_X = EPD_WIDTH - H_MARGIN;
 const uint START_TIME_Y = EPD_HEIGHT - V_MARGIN;
 const uint WICON_X = H_MARGIN;
@@ -59,9 +64,16 @@ const uint WUPDATE_Y = 450;
  */
 const Rect_t WICON_AREA = {
 	.x = 1,
-	.y = (int32_t)(CLOCK_Y + 1),
+	.y = (int32_t)(EPD_HEIGHT / 2),
 	.width = (int32_t)(CTEMP_X - 1),
-	.height = (int32_t)(VOLTAGE_Y - 30 - (CLOCK_Y + 1)),
+	.height = (int32_t)(BATT_Y - (EPD_HEIGHT / 2)),
+};
+
+const Rect_t BATT_AREA = {
+	.x = BATT_X,
+	.y = BATT_Y,
+	.width = batt_100_width,
+	.height = batt_100_height,
 };
 
 bool DRAW_DATE = false;
@@ -74,12 +86,12 @@ bool DRAW_HUMIDITY = false;
 char _tod[10];
 char _dow[20];
 char _mdy[50];
-char _volts[10];
 char _wTemp[10];
 char _wFeels[20];
 char _wWind[25];
 char _wHumidity[20];
 char _wUpdated[20];
+uint8_t _batt = 0;
 struct tm now;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
@@ -92,13 +104,13 @@ RTC_DATA_ATTR float voltage = -1;
 RTC_DATA_ATTR char dow[20];
 RTC_DATA_ATTR char mdy[50];
 RTC_DATA_ATTR char tod[10];
-RTC_DATA_ATTR char volts[10];
 RTC_DATA_ATTR char wTemp[10];
 RTC_DATA_ATTR char wFeels[20];
 RTC_DATA_ATTR char wWind[25];
 RTC_DATA_ATTR char wHumidity[20];
 RTC_DATA_ATTR char wUpdated[20];
 RTC_DATA_ATTR char stime[40];
+RTC_DATA_ATTR uint8_t batt = 5;
 RTC_DATA_ATTR time_t lastNtpUpdate;
 RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
@@ -155,11 +167,6 @@ void drawString(int x, int y, String text, String old_text, alignment align) {
 	drawString(x, y, text, align);
 }
 
-void drawStartTime() {
-	setFont(NK5715B);
-	drawString(START_TIME_X, START_TIME_Y, stime, stime, RIGHT);
-}
-
 void drawClock() {
 	setFont(NK5772B);
 	drawString(CLOCK_X, CLOCK_Y, _tod, tod, LEFT);
@@ -201,10 +208,29 @@ void drawVoltage() {
 	float _voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 	if (_voltage != voltage) {
 		voltage = _voltage;
-		sprintf(_volts, "%.2fV", voltage);
-		setFont(NK5715B);
-		drawString(VOLTAGE_X, VOLTAGE_Y, _volts, volts, LEFT);
-		strcpy(volts, _volts);
+		uint8_t *img_data;
+		// These values were arrived at via careful reasoning and due consideration, I assure you. I absolutely did not just make them up.
+		if (voltage < 3.8) {
+			_batt = 0;
+			img_data = (uint8_t *)batt_0_data;
+		} else if (voltage < 3.9) {
+			_batt = 1;
+			img_data = (uint8_t *)batt_25_data;
+		} else if (voltage < 4) {
+			batt = 2;
+			img_data = (uint8_t *)batt_50_data;
+		} else if (voltage < 4.15) {
+			batt = 3;
+			img_data = (uint8_t *)batt_75_data;
+		} else {
+			batt = 4;
+			img_data = (uint8_t *)batt_100_data;
+		}
+		if (_batt != batt) {
+			epd_clear_area(BATT_AREA);
+			epd_draw_grayscale_image(BATT_AREA, img_data);
+			batt = _batt;
+		}
 	}
 	lastVoltageUpdate = waketime;
 }
@@ -361,9 +387,6 @@ void setup() {
 
 		getClock();
 		getWeather();
-		struct tm startTime;
-		getLocalTime(&startTime, 0);
-		strftime(stime, 40, "Running since %a %b %d %Y %H:%M", &startTime);
 
 		epd_init();
 		epd_poweron();
@@ -371,7 +394,6 @@ void setup() {
 		drawClock();
 		drawWeather();
 		drawVoltage();
-		drawStartTime();
 		epd_poweroff_all();
 
 		setClock();
