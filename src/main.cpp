@@ -228,11 +228,13 @@ void ntpUpdate() {
 
 	enableWifi();
 	timeClient.begin();
-	timeClient.update();
+	bool updated = timeClient.update();
 	timeClient.end();
 	disableWifi();
 
-	setUnixtime(timeClient.getEpochTime());
+	if (updated) {
+		setUnixtime(timeClient.getEpochTime());
+	}
 
 	lastNtpUpdate = waketime;
 
