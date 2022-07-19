@@ -70,10 +70,10 @@ const uint WUPDATE_Y = 450;
  * large area that definitely eoncompasses the whole thing.
  */
 const Rect_t WICON_AREA = {
-	.x = 1,
-	.y = (int32_t)(EPD_HEIGHT / 2),
-	.width = (int32_t)(CTEMP_X - 1),
-	.height = (int32_t)(BATT_Y - (EPD_HEIGHT / 2)),
+	.x = H_MARGIN,
+	.y = (int32_t)(EPD_HEIGHT / 2) - 10,
+	.width = (int32_t)(CTEMP_X - 11),
+	.height = (int32_t)(BATT_Y - (EPD_HEIGHT / 2) + 10),
 };
 
 const Rect_t BATT_AREA = {
@@ -86,7 +86,7 @@ const Rect_t BATT_AREA = {
 char _tod[10];
 char _dow[20];
 char _mdy[50];
-char _wIcon[2];
+char _wIcon[5];
 char _wTemp[10];
 char _wFeels[20];
 char _wWind[25];
@@ -103,10 +103,10 @@ RTC_DATA_ATTR int minute = -1;
 RTC_DATA_ATTR int dayOfWeek = -1;
 RTC_DATA_ATTR int vref = 1100;
 RTC_DATA_ATTR float voltage = -1;
+RTC_DATA_ATTR char tod[10];
 RTC_DATA_ATTR char dow[20];
 RTC_DATA_ATTR char mdy[50];
-RTC_DATA_ATTR char tod[10];
-RTC_DATA_ATTR char wIcon[2];
+RTC_DATA_ATTR char wIcon[5];
 RTC_DATA_ATTR char wTemp[10];
 RTC_DATA_ATTR char wFeels[20];
 RTC_DATA_ATTR char wWind[25];
@@ -324,31 +324,37 @@ void getWeather() {
 	disableWifi();
 
 	time(&lastWeatherUpdate);
-
-	if (!updated) return;
-
-	updates |= DRAW_WEATHER;
-
-	sprintf(_wIcon, "%s", weather.getIcon(w.icon));
-	if (wIcon != _wIcon) updates |= DRAW_WICON;
-
-	sprintf(_wTemp, "%.1fc", w.current_Temp);
-	if (strcmp(wTemp, _wTemp) != 0) updates |= DRAW_TEMP;
-
-	sprintf(_wFeels, "Feels like %.1fc", w.feels_like);
-	if (strcmp(wFeels, _wFeels) != 0) updates |= DRAW_FTEMP;
-
-	int ws = w.wind_speed * 3.6;
-	String wd = weather.getWindDirection(w.wind_direction);
-	sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
-	if (strcmp(wWind, _wWind) != 0) updates |= DRAW_WIND;
-
-	sprintf(_wHumidity, "Humidity: %d%%", w.humidity);
-	if (strcmp(wHumidity, _wHumidity) != 0) updates |= DRAW_HUMIDITY;
-
 	struct tm now;
 	getLocalTime(&now, 0);
-	strftime(_wUpdated, 20, "Updated: %H:%M", &now);
+
+	if (updated) {
+
+		updates |= DRAW_WEATHER;
+
+		sprintf(_wIcon, "%s", weather.getIcon(w.icon));
+		if (wIcon != _wIcon) updates |= DRAW_WICON;
+
+		sprintf(_wTemp, "%.1fc", w.current_Temp);
+		if (strcmp(wTemp, _wTemp) != 0) updates |= DRAW_TEMP;
+
+		sprintf(_wFeels, "Feels like %.1fc", w.feels_like);
+		if (strcmp(wFeels, _wFeels) != 0) updates |= DRAW_FTEMP;
+
+		int ws = w.wind_speed * 3.6;
+		String wd = weather.getWindDirection(w.wind_direction);
+		sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
+		if (strcmp(wWind, _wWind) != 0) updates |= DRAW_WIND;
+
+		sprintf(_wHumidity, "Humidity: %d%%", w.humidity);
+		if (strcmp(wHumidity, _wHumidity) != 0) updates |= DRAW_HUMIDITY;
+
+		strftime(_wUpdated, 20, "Updated: %H:%M", &now);
+
+	} else {
+
+		strftime(_wUpdated, 20, "! Updated: %H:%M", &now);
+
+	}
 	
 }
 
@@ -387,34 +393,24 @@ void setup() {
 	tzset(); // Assign the local timezone from setenv
 	disableCore0WDT(); // Network requests may block long enough to trigger watchdog
 
-	time(&waketime);
-
 	if (firstRun) {
-		firstRun = false;
 		ntpUpdate();
+		time(&waketime);
 		getClock();
 		setClock();
 		getWeather();
 		setWeather();
 		redraw();
+		firstRun = false;
 	} else {
-
 		if (waketime - lastNtpUpdate >= NTP_INTERVAL) ntpUpdate();
-		
-		getClock();
-		
+		time(&waketime);
+		if (waketime - lastRedraw >= REDRAW_INTERVAL) redraw();
 		if (waketime - lastWeatherUpdate >= WEATHER_INTERVAL) getWeather();
-		
-		if (waketime - lastRedraw >= REDRAW_INTERVAL) {
-			redraw();
-		} else {
-			partialRedraw();
-		}
-
+		getClock();
+		partialRedraw();
 		setClock();
-
 		if (updates&DRAW_WEATHER) setWeather();
-
 	}
 
 	esp_sleep_enable_timer_wakeup((60 - (waketime % 60))  * 1000000);
