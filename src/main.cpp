@@ -40,6 +40,7 @@ const bool DRAW_TEMP = (1<<3);
 const bool DRAW_FTEMP = (1<<4);
 const bool DRAW_WIND = (1<<5);
 const bool DRAW_HUMIDITY = (1<<6);
+const bool DRAW_VOLTAGE = (1<<7);
 const uint CLOCK_X = H_MARGIN;
 const uint CLOCK_Y = 175;
 const uint DATE_X = EPD_WIDTH - H_MARGIN;
@@ -72,7 +73,7 @@ const uint WUPDATE_Y = 450;
 const Rect_t WICON_AREA = {
 	.x = H_MARGIN,
 	.y = (int32_t)(EPD_HEIGHT / 2) - 10,
-	.width = (int32_t)(CTEMP_X - 11),
+	.width = (int32_t)(CTEMP_X - H_MARGIN - 5),
 	.height = (int32_t)(BATT_Y - (EPD_HEIGHT / 2) + 10),
 };
 
@@ -102,6 +103,7 @@ RTC_DATA_ATTR bool firstRun = true;
 RTC_DATA_ATTR int minute = -1;
 RTC_DATA_ATTR int dayOfWeek = -1;
 RTC_DATA_ATTR int vref = 1100;
+RTC_DATA_ATTR int batt = 5;
 RTC_DATA_ATTR float voltage = -1;
 RTC_DATA_ATTR char tod[10];
 RTC_DATA_ATTR char dow[20];
@@ -112,7 +114,6 @@ RTC_DATA_ATTR char wFeels[20];
 RTC_DATA_ATTR char wWind[25];
 RTC_DATA_ATTR char wHumidity[20];
 RTC_DATA_ATTR char wUpdated[20];
-RTC_DATA_ATTR uint8_t batt = 5;
 RTC_DATA_ATTR time_t lastNtpUpdate;
 RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
@@ -205,43 +206,53 @@ void setClock() {
 	}
 }
 
-void drawVoltage() {
+void getVoltage() {
 	// Correct the ADC reference voltage
 	esp_adc_cal_characteristics_t adc_chars;
 	esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
-	if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF) {
-		vref = adc_chars.vref;
-	}
+	if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF) vref = adc_chars.vref;
 	delay(10); // Make adc measurement more accurate
 	uint16_t v = analogRead(BATT_PIN);
 	float _voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 	if (_voltage != voltage) {
 		voltage = _voltage;
-		uint8_t *img_data;
 		// These values were arrived at via careful reasoning and due consideration, I assure you. I absolutely did not just make them up.
 		if (voltage < 3.8) {
 			_batt = 0;
-			img_data = (uint8_t *)batt_0_data;
 		} else if (voltage < 3.9) {
 			_batt = 1;
-			img_data = (uint8_t *)batt_25_data;
 		} else if (voltage < 4) {
-			batt = 2;
-			img_data = (uint8_t *)batt_50_data;
+			_batt = 2;
 		} else if (voltage < 4.15) {
-			batt = 3;
-			img_data = (uint8_t *)batt_75_data;
+			_batt = 3;
 		} else {
-			batt = 4;
-			img_data = (uint8_t *)batt_100_data;
+			_batt = 4;
 		}
-		if (_batt != batt) {
-			epd_clear_area(BATT_AREA);
-			epd_draw_grayscale_image(BATT_AREA, img_data);
+		if (batt != _batt) {
 			batt = _batt;
+			updates |= DRAW_VOLTAGE;
 		}
 	}
 	time(&lastVoltageUpdate);
+}
+
+void redrawVoltage() {
+	if (batt == 0) {
+		epd_draw_grayscale_image(BATT_AREA, (uint8_t *)batt_0_data);
+	} else if (batt == 1) {
+		epd_draw_grayscale_image(BATT_AREA, (uint8_t *)batt_25_data);
+	} else if (batt == 2) {
+		epd_draw_grayscale_image(BATT_AREA, (uint8_t *)batt_50_data);
+	} else if (batt == 3) {
+		epd_draw_grayscale_image(BATT_AREA, (uint8_t *)batt_75_data);
+	} else {
+		epd_draw_grayscale_image(BATT_AREA, (uint8_t *)batt_100_data);
+	}
+}
+
+void drawVoltage() {
+	epd_clear_area(BATT_AREA);
+	redrawVoltage();
 }
 
 void enableWifi() {
@@ -373,7 +384,8 @@ void redraw() {
 	epd_clear();
 	redrawClock();
 	redrawWeather();
-	drawVoltage();
+	if (firstRun) getVoltage();
+	redrawVoltage();
 	epd_poweroff_all();
 	time(&lastRedraw);
 }
@@ -383,7 +395,8 @@ void partialRedraw() {
 	epd_poweron();
 	drawClock();
 	if (updates&DRAW_WEATHER) drawWeather();
-	if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) drawVoltage();
+	if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) getVoltage();
+	if (updates&DRAW_VOLTAGE) drawVoltage();
 	epd_poweroff_all();
 }
 
