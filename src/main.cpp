@@ -94,7 +94,7 @@ char _wWind[25];
 char _wHumidity[20];
 char _wUpdated[20];
 uint8_t _batt = 0;
-uint8_t updates = 0;
+uint8_t _epdUpdates = 0;
 struct tm now;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
@@ -124,6 +124,25 @@ NTPClient timeClient(ntpUDP);
 GFXfont currentFont;
 weatherData w;
 OpenWeather weather(OWM_KEY, OWM_LOCATION);
+
+void loggem() {
+	Serial.begin(9600);
+	Serial.println("---");
+	Serial.println(tod);
+	Serial.println(dow);
+	Serial.println(mdy);
+	Serial.println(wIcon);
+	Serial.println(wTemp);
+	Serial.println(wFeels);
+	Serial.println(wWind);
+	Serial.println(wHumidity);
+	Serial.println(wUpdated);
+	Serial.println(lastNtpUpdate);
+	Serial.println(lastVoltageUpdate);
+	Serial.println(lastWeatherUpdate);
+	Serial.println(lastRedraw);
+	Serial.end();
+}
 
 int setUnixtime(int32_t unixtime) {
 	timeval epoch = {unixtime, 0};
@@ -180,7 +199,7 @@ void redrawClock() {
 void drawClock() {
 	setFont(NK5772B);
 	drawString(CLOCK_X, CLOCK_Y, _tod, tod, LEFT);
-	if (updates&DRAW_DATE) {
+	if (_epdUpdates&DRAW_DATE) {
 		setFont(NK5724B);
 		drawString(DATE_X, DATE_Y1, _dow, dow, RIGHT);
 		drawString(DATE_X, DATE_Y2, _mdy, mdy, RIGHT);
@@ -191,7 +210,7 @@ void getClock() {
 	getLocalTime(&now, 0);
 	strftime(_tod, 10, "%H:%M", &now);
 	if (dayOfWeek != now.tm_wday) {
-		updates |= DRAW_DATE;
+		_epdUpdates |= DRAW_DATE;
 		dayOfWeek = now.tm_wday;
 		strftime(_dow, 20, "%A", &now);
 		strftime(_mdy, 50, "%b %d %Y", &now);
@@ -200,7 +219,7 @@ void getClock() {
 
 void setClock() {
 	strcpy(tod, _tod);
-	if (updates&DRAW_DATE) {
+	if (_epdUpdates&DRAW_DATE) {
 		strcpy(dow, _dow);
 		strcpy(mdy, _mdy);
 	}
@@ -223,14 +242,14 @@ void getVoltage() {
 			_batt = 1;
 		} else if (voltage < 4) {
 			_batt = 2;
-		} else if (voltage < 4.15) {
+		} else if (voltage < 4.1) {
 			_batt = 3;
 		} else {
 			_batt = 4;
 		}
 		if (batt != _batt) {
 			batt = _batt;
-			updates |= DRAW_VOLTAGE;
+			_epdUpdates |= DRAW_VOLTAGE;
 		}
 	}
 	time(&lastVoltageUpdate);
@@ -299,28 +318,28 @@ void redrawWeather() {
 void drawWeather() {
 
 	setFont(Meteocons96);
-	if (updates&DRAW_WICON) {
+	if (_epdUpdates&DRAW_WICON) {
 		epd_clear_area(WICON_AREA);
 		drawString(WICON_X, WICON_Y, wIcon, LEFT);
 	}
 
 	setFont(NK5748B);
 
-	if (updates&DRAW_TEMP) {
+	if (_epdUpdates&DRAW_TEMP) {
 		drawString(CTEMP_X, CTEMP_Y, _wTemp, wTemp, LEFT);
 	}
 
 	setFont(NK5715B);
 
-	if (updates&DRAW_FTEMP) {
+	if (_epdUpdates&DRAW_FTEMP) {
 		drawString(FTEMP_X, FTEMP_Y, _wFeels, wFeels, LEFT);
 	}
 
-	if (updates&DRAW_WIND) {
+	if (_epdUpdates&DRAW_WIND) {
 		drawString(WIND_X, WIND_Y, _wWind, wWind, RIGHT);
 	}
 
-	if (updates&DRAW_HUMIDITY) {
+	if (_epdUpdates&DRAW_HUMIDITY) {
 		drawString(HUMID_X, HUMID_Y, _wHumidity, wHumidity, RIGHT);
 	}
 
@@ -340,24 +359,24 @@ void getWeather() {
 
 	if (updated) {
 
-		updates |= DRAW_WEATHER;
+		_epdUpdates |= DRAW_WEATHER;
 
 		sprintf(_wIcon, "%s", weather.getIcon(w.icon));
-		if (wIcon != _wIcon) updates |= DRAW_WICON;
+		if (wIcon != _wIcon) _epdUpdates |= DRAW_WICON;
 
 		sprintf(_wTemp, "%.1fc", w.current_Temp);
-		if (strcmp(wTemp, _wTemp) != 0) updates |= DRAW_TEMP;
+		if (strcmp(wTemp, _wTemp) != 0) _epdUpdates |= DRAW_TEMP;
 
 		sprintf(_wFeels, "Feels like %.1fc", w.feels_like);
-		if (strcmp(wFeels, _wFeels) != 0) updates |= DRAW_FTEMP;
+		if (strcmp(wFeels, _wFeels) != 0) _epdUpdates |= DRAW_FTEMP;
 
 		int ws = w.wind_speed * 3.6;
 		String wd = weather.getWindDirection(w.wind_direction);
 		sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
-		if (strcmp(wWind, _wWind) != 0) updates |= DRAW_WIND;
+		if (strcmp(wWind, _wWind) != 0) _epdUpdates |= DRAW_WIND;
 
 		sprintf(_wHumidity, "Humidity: %d%%", w.humidity);
-		if (strcmp(wHumidity, _wHumidity) != 0) updates |= DRAW_HUMIDITY;
+		if (strcmp(wHumidity, _wHumidity) != 0) _epdUpdates |= DRAW_HUMIDITY;
 
 		strftime(_wUpdated, 20, "Updated: %H:%M", &now);
 
@@ -370,15 +389,16 @@ void getWeather() {
 }
 
 void setWeather() {
-	if (updates&DRAW_WICON) strcpy(wIcon, _wIcon);
-	if (updates&DRAW_TEMP) strcpy(wTemp, _wTemp);
-	if (updates&DRAW_FTEMP) strcpy(wFeels, _wFeels);
-	if (updates&DRAW_WIND) strcpy(wWind, _wWind);
-	if (updates&DRAW_HUMIDITY) strcpy(wHumidity, _wHumidity);
+	if (_epdUpdates&DRAW_WICON) strcpy(wIcon, _wIcon);
+	if (_epdUpdates&DRAW_TEMP) strcpy(wTemp, _wTemp);
+	if (_epdUpdates&DRAW_FTEMP) strcpy(wFeels, _wFeels);
+	if (_epdUpdates&DRAW_WIND) strcpy(wWind, _wWind);
+	if (_epdUpdates&DRAW_HUMIDITY) strcpy(wHumidity, _wHumidity);
 	strcpy(wUpdated, _wUpdated);
 }
 
 void redraw() {
+	loggem();
 	epd_init();
 	epd_poweron();
 	epd_clear();
@@ -394,9 +414,9 @@ void partialRedraw() {
 	epd_init();
 	epd_poweron();
 	drawClock();
-	if (updates&DRAW_WEATHER) drawWeather();
+	if (_epdUpdates&DRAW_WEATHER) drawWeather();
 	if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) getVoltage();
-	if (updates&DRAW_VOLTAGE) drawVoltage();
+	if (_epdUpdates&DRAW_VOLTAGE) drawVoltage();
 	epd_poweroff_all();
 }
 
@@ -423,7 +443,7 @@ void setup() {
 		getClock();
 		partialRedraw();
 		setClock();
-		if (updates&DRAW_WEATHER) setWeather();
+		if (_epdUpdates&DRAW_WEATHER) setWeather();
 	}
 
 	esp_sleep_enable_timer_wakeup((60 - (waketime % 60))  * 1000000);
