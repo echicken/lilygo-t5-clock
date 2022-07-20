@@ -32,7 +32,7 @@ Create a file at `src/config.h` and populate it with the following:
 #define VOLTAGE_INTERVAL 1800  // Seconds between battery voltage updates
 #define NTP_INTERVAL	 3600  // Seconds between NTP updates
 #define WEATHER_INTERVAL 1800  // Seconds between weather updates
-#define REDRAW_INTERVAL  14400 // Seconds between full screen redraws
+#define REDRAW_INTERVAL  3600 // Seconds between full screen redraws
 ```
 
 Customize as needed.
