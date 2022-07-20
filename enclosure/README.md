@@ -6,3 +6,5 @@
 - [./case.scad](case.scad) is the OpenSCAD source for this design so you can tinker with parameters if needed.
 
 I printed my case in eSun transparent Blue PETG on a Prusa i3 mk3. Your results may differ depending on your printer and material. In particular you may want to tweak the `tol` and `vwt` parameters in [./case.scad](case.scad) for best results. The `tol` parameter will affect the fit of the lid posts and lid bezel strip.
+
+A length of 22 AWG wire is threaded through the holes on the rear of the case and twisted around itself at the ends. This is for hanging the clock on a wall hook, nail, or screw.
