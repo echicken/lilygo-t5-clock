@@ -8,7 +8,7 @@ Developed with Platform.IO & Arduino framework.
 
 ## Components
 
-- The "PH 2.0 holder" variant of [this EPD module](https://www.aliexpress.com/item/1005002006058892.html)
+- The "PH 2.0 holder" variant of [this EPD module](https://www.aliexpress.com/item/1005002006058892.html) ([manufacturer's page](http://www.lilygo.cn/prod_view.aspx?TypeId=50061&Id=1384&FId=t3:50061:3))
 - [This battery](https://www.amazon.ca/gp/product/B095BTSMYH), 3.7V 10.5aH
 - A JST PH 2.0 connector
 
