@@ -45,7 +45,7 @@ I can't find a list of named locations (city, country code as in `OWM_LOCATION`)
 
 The NTP update interval may be unnecessarily short by default. Would be worth trying different values and checking the time against a known good clock.
 
-The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Helps to get rid of ghosting and clean up the display, as parts that should be blank (white) tend to darken over time, and garbage occasionally appears in unexpected places.
+~~The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Helps to get rid of ghosting and clean up the display, as parts that should be blank (white) tend to darken over time, and garbage occasionally appears in unexpected places.~~
 
 ## Design Notes
 

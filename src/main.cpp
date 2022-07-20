@@ -416,14 +416,16 @@ void setup() {
 		redraw();
 		firstRun = false;
 	} else {
+		// bool r = waketime - lastRedraw >= REDRAW_INTERVAL;
 		if (waketime - lastNtpUpdate >= NTP_INTERVAL) ntpUpdate();
 		time(&waketime);
-		if (waketime - lastRedraw >= REDRAW_INTERVAL) redraw();
 		if (waketime - lastWeatherUpdate >= WEATHER_INTERVAL) getWeather();
 		getClock();
+		// if (!r) partialRedraw();
 		partialRedraw();
 		setClock();
 		if (_epdUpdates&DRAW_WEATHER) setWeather();
+		// if (r) redraw();
 	}
 
 	esp_sleep_enable_timer_wakeup((60 - (waketime % 60))  * 1000000);
