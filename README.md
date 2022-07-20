@@ -50,7 +50,7 @@ The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Hel
 
 ### Enclosure
 
-I'm using the variant of this display with a JST battery connector, along with [this battery](https://www.amazon.ca/gp/product/B095BTSMYH). This allows for a thinner case and longer battery life than with the 18650 variant. Case STL and OpenSCAD source are in the `enclosure/` directory.
+I'm using the variant of this display with a JST battery connector, along with [this battery](https://www.amazon.ca/gp/product/B095BTSMYH). This allows for a thinner case and longer battery life than with the 18650 variant. Case STL and OpenSCAD source are in the [enclosure/](enclosure/) directory.
 
 ### Power Consumption
 
