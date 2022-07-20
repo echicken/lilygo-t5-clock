@@ -33,7 +33,7 @@
 #define H_MARGIN 20
 #define V_MARGIN 20
 
-const bool DRAW_DATE = (1<<0);
+// get rid of this bitfield nonsense
 const bool DRAW_WEATHER = (1<<1);
 const bool DRAW_WICON = (1<<2);
 const bool DRAW_TEMP = (1<<3);
@@ -84,6 +84,7 @@ const Rect_t BATT_AREA = {
 	.height = batt_100_height,
 };
 
+bool _drawDate = false;
 char _tod[10];
 char _dow[20];
 char _mdy[50];
@@ -95,7 +96,6 @@ char _wHumidity[20];
 char _wUpdated[20];
 uint8_t _batt = 0;
 uint8_t _epdUpdates = 0;
-struct tm now;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
 
@@ -180,7 +180,7 @@ void redrawClock() {
 void drawClock() {
 	setFont(NK5772B);
 	drawString(CLOCK_X, CLOCK_Y, _tod, tod, LEFT);
-	if (_epdUpdates&DRAW_DATE) {
+	if (_drawDate) {
 		setFont(NK5724B);
 		drawString(DATE_X, DATE_Y1, _dow, dow, RIGHT);
 		drawString(DATE_X, DATE_Y2, _mdy, mdy, RIGHT);
@@ -188,10 +188,11 @@ void drawClock() {
 }
 
 void getClock() {
+	struct tm now;
 	getLocalTime(&now);
 	strftime(_tod, 10, "%H:%M", &now);
 	if (dayOfWeek != now.tm_wday) {
-		_epdUpdates |= DRAW_DATE;
+		_drawDate = true;
 		dayOfWeek = now.tm_wday;
 		strftime(_dow, 20, "%A", &now);
 		strftime(_mdy, 50, "%b %d %Y", &now);
@@ -200,7 +201,7 @@ void getClock() {
 
 void setClock() {
 	strcpy(tod, _tod);
-	if (_epdUpdates&DRAW_DATE) {
+	if (_drawDate) {
 		strcpy(dow, _dow);
 		strcpy(mdy, _mdy);
 	}
