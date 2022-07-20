@@ -117,7 +117,7 @@ RTC_DATA_ATTR char wUpdated[20];
 RTC_DATA_ATTR time_t lastNtpUpdate;
 RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
-RTC_DATA_ATTR time_t lastRedraw;
+// RTC_DATA_ATTR time_t lastRedraw;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -387,7 +387,7 @@ void redraw() {
 	if (firstRun) getVoltage();
 	redrawVoltage();
 	epd_poweroff_all();
-	time(&lastRedraw);
+	// time(&lastRedraw);
 }
 
 void partialRedraw() {
