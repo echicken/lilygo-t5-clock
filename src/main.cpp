@@ -188,7 +188,7 @@ void drawClock() {
 }
 
 void getClock() {
-	getLocalTime(&now, 0);
+	getLocalTime(&now);
 	strftime(_tod, 10, "%H:%M", &now);
 	if (dayOfWeek != now.tm_wday) {
 		_epdUpdates |= DRAW_DATE;
@@ -336,7 +336,7 @@ void getWeather() {
 
 	time(&lastWeatherUpdate);
 	struct tm now;
-	getLocalTime(&now, 0);
+	getLocalTime(&now);
 
 	if (updated) {
 
