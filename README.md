@@ -6,6 +6,18 @@ Developed with Platform.IO & Arduino framework.
 
 ![A picture of the clock](/epd_clock.png)
 
+## Components
+
+- The "PH 2.0 holder" variant of [this EPD module](https://www.aliexpress.com/item/1005002006058892.html)
+- [This battery](https://www.amazon.ca/gp/product/B095BTSMYH), 3.7V 10.5aH
+- A JST PH 2.0 connector
+
+### Battery Notes
+
+On my EPD board, when viewing the board side, with the ESP32 module at the top-right, the positive pin of the JST PH 2.0 connector is on the left. Be careful to connect the battery to the correct pins on **your** board, which may be different from mine, and **do not** attempt to charge the battery until you're sure it's hooked up properly.
+
+The wires on the battery that I'm using came unterminated. I just soldered the wires together with those of a pre-terminated pigtail. These are [easy to find online](https://www.amazon.ca/gp/product/B07NWD5NTN), but I just used what I had on hand and can't vouch for this exact product. Or do it the proper way with a connector and crimper, if you've got them.
+
 ## Configuration
 
 Create a file at `src/config.h` and populate it with the following:
@@ -16,10 +28,10 @@ Create a file at `src/config.h` and populate it with the following:
 #define OWM_KEY "Your OpenWeatherMap API key goes here"
 #define OWM_LOCATION "Toronto,ca"        // City and country code
 #define TZ_INFO "EST5EDT,M3.2.0,M11.1.0" // https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
-#define VOLTAGE_INTERVAL 1800 // Seconds between battery voltage updates
-#define NTP_INTERVAL	 3600 // Seconds between NTP updates
-#define WEATHER_INTERVAL 1800 // Seconds between weather updates
-#define REDRAW_INTERVAL  3600 // Seconds between full screen redraws
+#define VOLTAGE_INTERVAL 1800  // Seconds between battery voltage updates
+#define NTP_INTERVAL	 3600  // Seconds between NTP updates
+#define WEATHER_INTERVAL 1800  // Seconds between weather updates
+#define REDRAW_INTERVAL  14400 // Seconds between full screen redraws
 ```
 
 Customize as needed.
@@ -38,9 +50,7 @@ The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Hel
 
 ### Enclosure
 
-I'm using the variant of this display with a JST battery connector rather than the 18650 version. The intention is to keep it thin and flat, to be used as a wall clock. Every case I've seen so far is thicc or has a hump on the back for a big round battery, so I'll design my own and add it here once I've settled on a suitable battery.
-
-I'm waiting for [this battery](https://www.amazon.ca/gp/product/B095BTSMYH?th=1), which is slightly smaller in width and height than the EPD, and is 10 mm thick. The less often I need to take this thing off the wall to recharge it, the better.
+I'm using the variant of this display with a JST battery connector, along with [this battery](https://www.amazon.ca/gp/product/B095BTSMYH). This allows for a thinner case and longer battery life than with the 18650 variant. Case STL and OpenSCAD source are in the `enclosure/` directory.
 
 ### Power Consumption
 
