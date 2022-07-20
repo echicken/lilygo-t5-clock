@@ -125,25 +125,6 @@ GFXfont currentFont;
 weatherData w;
 OpenWeather weather(OWM_KEY, OWM_LOCATION);
 
-void loggem() {
-	Serial.begin(9600);
-	Serial.println("---");
-	Serial.println(tod);
-	Serial.println(dow);
-	Serial.println(mdy);
-	Serial.println(wIcon);
-	Serial.println(wTemp);
-	Serial.println(wFeels);
-	Serial.println(wWind);
-	Serial.println(wHumidity);
-	Serial.println(wUpdated);
-	Serial.println(lastNtpUpdate);
-	Serial.println(lastVoltageUpdate);
-	Serial.println(lastWeatherUpdate);
-	Serial.println(lastRedraw);
-	Serial.end();
-}
-
 int setUnixtime(int32_t unixtime) {
 	timeval epoch = {unixtime, 0};
 	return settimeofday((const timeval*)&epoch, 0);
@@ -398,7 +379,6 @@ void setWeather() {
 }
 
 void redraw() {
-	loggem();
 	epd_init();
 	epd_poweron();
 	epd_clear();
