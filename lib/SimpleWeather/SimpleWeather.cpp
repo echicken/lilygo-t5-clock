@@ -48,6 +48,8 @@ bool OpenWeather::updateStatus(weatherData *w){
 		return false;
 	}
 
+	if (!doc.containsKey("weather") || !doc.containsKey("main")) return false;
+
 	w->icon = doc["weather"][0]["icon"].as<String>();
 	w->current_Temp = doc["main"]["temp"].as<float>();
 	w->feels_like = doc["main"]["feels_like"].as<float>();
