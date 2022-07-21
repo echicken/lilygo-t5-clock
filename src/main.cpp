@@ -33,7 +33,6 @@
 #define H_MARGIN 20
 #define V_MARGIN 20
 
-// get rid of this bitfield nonsense
 const uint CLOCK_X = H_MARGIN;
 const uint CLOCK_Y = 175;
 const uint DATE_X = EPD_WIDTH - H_MARGIN;
