@@ -41,7 +41,7 @@ Customize as needed.
 
 Get your OpenWeatherMap API key [here](https://openweathermap.org/api).
 
-I can't find a list of named locations (city, country code as in `OWM_LOCATION`) for use with OpenWeatherMap, but as luck would have it they know about my city. It'd be trivial to allow lookup by latitude and longitude instead, so let me know if you need this feature; I won't bother for now since I don't need it.
+A list of cities known to OpenWeatherMap can be found [here](https://openweathermap.org/storage/app/media/cities_list.xlsx). This must(?) be paired with an ISO 3166 country code as in the above example. It'd be trivial to allow lookup by latitude and longitude instead, so let me know if you need this feature; I won't bother for now since I don't need it.
 
 The NTP update interval may be unnecessarily short by default. Would be worth trying different values and checking the time against a known good clock.
 
