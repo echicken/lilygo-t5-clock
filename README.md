@@ -29,9 +29,10 @@ Create a file at `src/config.h` and populate it with the following:
 #define OWM_KEY "Your OpenWeatherMap API key goes here"
 #define OWM_LOCATION "Toronto,ca"        // City and country code
 #define TZ_INFO "EST5EDT,M3.2.0,M11.1.0" // https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
-#define VOLTAGE_INTERVAL 1800  // Seconds between battery voltage updates
-#define NTP_INTERVAL	 3600  // Seconds between NTP updates
-#define WEATHER_INTERVAL 1800  // Seconds between weather updates
+#define VOLTAGE_INTERVAL 1800 // Seconds between battery voltage updates
+#define NTP_INTERVAL	 3600 // Seconds between NTP updates
+#define WEATHER_INTERVAL 1800 // Seconds between weather updates
+#define REDRAW_INTERVAL  3600 // Seconds between screen redraws
 ```
 
 Customize as needed.
@@ -44,7 +45,7 @@ I can't find a list of named locations (city, country code as in `OWM_LOCATION`)
 
 The NTP update interval may be unnecessarily short by default. Would be worth trying different values and checking the time against a known good clock.
 
-~~The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Helps to get rid of ghosting and clean up the display, as parts that should be blank (white) tend to darken over time, and garbage occasionally appears in unexpected places.~~
+The display is cleared and redrawn entirely every `REDRAW_INTERVAL` seconds. Helps to get rid of ghosting and clean up the display, as parts that should be blank (white) tend to darken over time, and garbage occasionally appears in unexpected places.
 
 ## Design Notes
 
