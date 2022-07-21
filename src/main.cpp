@@ -34,13 +34,6 @@
 #define V_MARGIN 20
 
 // get rid of this bitfield nonsense
-const bool DRAW_WEATHER = (1<<1);
-const bool DRAW_WICON = (1<<2);
-const bool DRAW_TEMP = (1<<3);
-const bool DRAW_FTEMP = (1<<4);
-const bool DRAW_WIND = (1<<5);
-const bool DRAW_HUMIDITY = (1<<6);
-const bool DRAW_VOLTAGE = (1<<7);
 const uint CLOCK_X = H_MARGIN;
 const uint CLOCK_Y = 175;
 const uint DATE_X = EPD_WIDTH - H_MARGIN;
@@ -85,6 +78,13 @@ const Rect_t BATT_AREA = {
 };
 
 bool _drawDate = false;
+bool _drawWeather = false;
+bool _drawWicon = false;
+bool _drawTemp = false;
+bool _drawFtemp = false;
+bool _drawWind = false;
+bool _drawHumidity = false;
+bool _drawVoltage = false;
 char _tod[10];
 char _dow[20];
 char _mdy[50];
@@ -95,7 +95,6 @@ char _wWind[25];
 char _wHumidity[20];
 char _wUpdated[20];
 uint8_t _batt = 0;
-uint8_t _epdUpdates = 0;
 time_t waketime;
 enum alignment { LEFT, RIGHT, CENTER };
 
@@ -117,7 +116,7 @@ RTC_DATA_ATTR char wUpdated[20];
 RTC_DATA_ATTR time_t lastNtpUpdate;
 RTC_DATA_ATTR time_t lastVoltageUpdate;
 RTC_DATA_ATTR time_t lastWeatherUpdate;
-// RTC_DATA_ATTR time_t lastRedraw;
+RTC_DATA_ATTR time_t lastRedraw;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -231,7 +230,7 @@ void getVoltage() {
 		}
 		if (batt != _batt) {
 			batt = _batt;
-			_epdUpdates |= DRAW_VOLTAGE;
+			_drawVoltage = true;
 		}
 	}
 	time(&lastVoltageUpdate);
@@ -300,28 +299,28 @@ void redrawWeather() {
 void drawWeather() {
 
 	setFont(Meteocons96);
-	if (_epdUpdates&DRAW_WICON) {
+	if (_drawWicon) {
 		epd_clear_area(WICON_AREA);
 		drawString(WICON_X, WICON_Y, wIcon, LEFT);
 	}
 
 	setFont(NK5748B);
 
-	if (_epdUpdates&DRAW_TEMP) {
+	if (_drawTemp) {
 		drawString(CTEMP_X, CTEMP_Y, _wTemp, wTemp, LEFT);
 	}
 
 	setFont(NK5715B);
 
-	if (_epdUpdates&DRAW_FTEMP) {
+	if (_drawFtemp) {
 		drawString(FTEMP_X, FTEMP_Y, _wFeels, wFeels, LEFT);
 	}
 
-	if (_epdUpdates&DRAW_WIND) {
+	if (_drawWind) {
 		drawString(WIND_X, WIND_Y, _wWind, wWind, RIGHT);
 	}
 
-	if (_epdUpdates&DRAW_HUMIDITY) {
+	if (_drawHumidity) {
 		drawString(HUMID_X, HUMID_Y, _wHumidity, wHumidity, RIGHT);
 	}
 
@@ -341,24 +340,24 @@ void getWeather() {
 
 	if (updated) {
 
-		_epdUpdates |= DRAW_WEATHER;
+		_drawWeather = true;
 
 		sprintf(_wIcon, "%s", weather.getIcon(w.icon));
-		if (wIcon != _wIcon) _epdUpdates |= DRAW_WICON;
+		if (wIcon != _wIcon) _drawWicon = true;
 
 		sprintf(_wTemp, "%.1fc", w.current_Temp);
-		if (strcmp(wTemp, _wTemp) != 0) _epdUpdates |= DRAW_TEMP;
+		if (strcmp(wTemp, _wTemp) != 0) _drawTemp = true;
 
 		sprintf(_wFeels, "Feels like %.1fc", w.feels_like);
-		if (strcmp(wFeels, _wFeels) != 0) _epdUpdates |= DRAW_FTEMP;
+		if (strcmp(wFeels, _wFeels) != 0) _drawFtemp = true;
 
 		int ws = w.wind_speed * 3.6;
 		String wd = weather.getWindDirection(w.wind_direction);
 		sprintf(_wWind, "Wind: %d km/h %s", ws, wd);
-		if (strcmp(wWind, _wWind) != 0) _epdUpdates |= DRAW_WIND;
+		if (strcmp(wWind, _wWind) != 0) _drawWind = true;
 
 		sprintf(_wHumidity, "Humidity: %d%%", w.humidity);
-		if (strcmp(wHumidity, _wHumidity) != 0) _epdUpdates |= DRAW_HUMIDITY;
+		if (strcmp(wHumidity, _wHumidity) != 0) _drawHumidity = true;
 
 		strftime(_wUpdated, 20, "Updated: %H:%M", &now);
 
@@ -371,11 +370,11 @@ void getWeather() {
 }
 
 void setWeather() {
-	if (_epdUpdates&DRAW_WICON) strcpy(wIcon, _wIcon);
-	if (_epdUpdates&DRAW_TEMP) strcpy(wTemp, _wTemp);
-	if (_epdUpdates&DRAW_FTEMP) strcpy(wFeels, _wFeels);
-	if (_epdUpdates&DRAW_WIND) strcpy(wWind, _wWind);
-	if (_epdUpdates&DRAW_HUMIDITY) strcpy(wHumidity, _wHumidity);
+	if (_drawWicon) strcpy(wIcon, _wIcon);
+	if (_drawTemp) strcpy(wTemp, _wTemp);
+	if (_drawFtemp) strcpy(wFeels, _wFeels);
+	if (_drawWind) strcpy(wWind, _wWind);
+	if (_drawHumidity) strcpy(wHumidity, _wHumidity);
 	strcpy(wUpdated, _wUpdated);
 }
 
@@ -388,16 +387,18 @@ void redraw() {
 	if (firstRun) getVoltage();
 	redrawVoltage();
 	epd_poweroff_all();
-	// time(&lastRedraw);
+	time(&lastRedraw);
 }
 
 void partialRedraw() {
 	epd_init();
 	epd_poweron();
 	drawClock();
-	if (_epdUpdates&DRAW_WEATHER) drawWeather();
-	if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) getVoltage();
-	if (_epdUpdates&DRAW_VOLTAGE) drawVoltage();
+	if (_drawWeather) drawWeather();
+	if (waketime - lastVoltageUpdate >= VOLTAGE_INTERVAL) {
+		getVoltage();
+		if (_drawVoltage) drawVoltage();
+	}
 	epd_poweroff_all();
 }
 
@@ -417,16 +418,15 @@ void setup() {
 		redraw();
 		firstRun = false;
 	} else {
-		// bool r = waketime - lastRedraw >= REDRAW_INTERVAL;
+		bool r = waketime - lastRedraw >= REDRAW_INTERVAL;
 		if (waketime - lastNtpUpdate >= NTP_INTERVAL) ntpUpdate();
 		time(&waketime);
 		if (waketime - lastWeatherUpdate >= WEATHER_INTERVAL) getWeather();
 		getClock();
-		// if (!r) partialRedraw();
-		partialRedraw();
+		if (!r) partialRedraw();
 		setClock();
-		if (_epdUpdates&DRAW_WEATHER) setWeather();
-		// if (r) redraw();
+		if (_drawWeather) setWeather();
+		if (r) redraw();
 	}
 
 	esp_sleep_enable_timer_wakeup((60 - (waketime % 60))  * 1000000);
