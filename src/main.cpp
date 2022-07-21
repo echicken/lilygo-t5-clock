@@ -281,10 +281,6 @@ void ntpUpdate() {
 
 	time(&lastNtpUpdate);
 
-	Serial.print(waketime);
-	Serial.print(" NTP Update ");
-	Serial.println(updated);
-
 }
 
 void redrawWeather() {
@@ -382,8 +378,6 @@ void setWeather() {
 }
 
 void redraw() {
-	Serial.print(waketime);
-	Serial.println(" redraw");
 	epd_init();
 	epd_poweron();
 	epd_clear();
@@ -396,8 +390,6 @@ void redraw() {
 }
 
 void partialRedraw() {
-	Serial.print(waketime);
-	Serial.println(" partial redraw");
 	epd_init();
 	epd_poweron();
 	drawClock();
@@ -414,9 +406,6 @@ void setup() {
 	setenv("TZ", TZ_INFO, 1);
 	tzset(); // Assign the local timezone from setenv
 	disableCore0WDT(); // Network requests may block long enough to trigger watchdog
-
-	Serial.begin(9600);
-	Serial.println("---");
 
 	if (firstRun) {
 		ntpUpdate();
@@ -441,9 +430,6 @@ void setup() {
 		if (_drawWeather) setWeather();
 		if (r) redraw();
 	}
-
-	Serial.println("---");
-	Serial.end();
 
 	esp_sleep_enable_timer_wakeup((60 - (waketime % 60))  * 1000000);
 	esp_deep_sleep_start();
