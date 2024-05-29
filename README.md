@@ -27,7 +27,8 @@ Create a file at `src/config.h` and populate it with the following:
 #define WIFI_SSID "Your WiFi SSID goes here"
 #define WIFI_PASS "Your WiFi password goes here"
 #define OWM_KEY "Your OpenWeatherMap API key goes here"
-#define OWM_LOCATION "Toronto,ca"        // City and country code
+#define OWM_LAT 43.69264
+#define OWM_LON -79.38091
 #define TZ_INFO "EST5EDT,M3.2.0,M11.1.0" // https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 #define VOLTAGE_INTERVAL 1800 // Seconds between battery voltage updates
 #define NTP_INTERVAL	 3600 // Seconds between NTP updates
@@ -40,8 +41,6 @@ Customize as needed.
 ### Configuration Notes
 
 Get your OpenWeatherMap API key [here](https://openweathermap.org/api).
-
-A list of cities known to OpenWeatherMap can be found [here](https://openweathermap.org/storage/app/media/cities_list.xlsx). This must(?) be paired with an ISO 3166 country code as in the above example. It'd be trivial to allow lookup by latitude and longitude instead, so let me know if you need this feature; I won't bother for now since I don't need it.
 
 The NTP update interval may be unnecessarily short by default. Would be worth trying different values and checking the time against a known good clock.
 
