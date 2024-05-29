@@ -4,12 +4,8 @@
 #include <ArduinoJson.h>
 #include "SimpleWeather.h"
 
-OpenWeather::OpenWeather(String Key, String City){
-	_url = "/data/2.5/weather?q=" + City + "&appid=" + Key +"&units=metric";
-}
-
 OpenWeather::OpenWeather(String Key, float lat, float longi){
-	_url = "/data/2.5/weather?lat=" + String(lat) + "&long=" + String(longi) + "&appid=" + Key +"&units=metric";
+	_url = "/data/3.0/onecall?lat=" + String(lat) + "&lon=" + String(longi) + "&appid=" + Key +"&units=metric&exclude=minutely,hourly,daily,alerts";
 }
 
 bool OpenWeather::updateStatus(weatherData *w){
@@ -17,7 +13,7 @@ bool OpenWeather::updateStatus(weatherData *w){
 	const char *openweather = "api.openweathermap.org";
 	const int httpsPort = 443;
 	WiFiClientSecure httpsClient;
-	const size_t capacity = 2*JSON_ARRAY_SIZE(1) + JSON_ARRAY_SIZE(2) + 6*JSON_OBJECT_SIZE(1) + 3*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(5) + 5*JSON_OBJECT_SIZE(8) + 570;
+	const size_t capacity = 1024;
 	httpsClient.setInsecure();
 	httpsClient.setTimeout(15000);
 
@@ -48,14 +44,25 @@ bool OpenWeather::updateStatus(weatherData *w){
 		return false;
 	}
 
-	if (!doc.containsKey("weather") || !doc.containsKey("main")) return false;
-
-	w->icon = doc["weather"][0]["icon"].as<String>();
-	w->current_Temp = doc["main"]["temp"].as<float>();
-	w->feels_like = doc["main"]["feels_like"].as<float>();
-	w->humidity = doc["main"]["humidity"].as<int>();
-	w->wind_speed = doc["wind"]["speed"].as<float>();
-	w->wind_direction = doc["wind"]["deg"].as<int>();
+	if (!doc.containsKey("current")) return false;
+	if (!doc["current"].containsKey("weather") && doc["current"]["weather"].size() > 0) {
+		w->icon = doc["weather"][0]["icon"].as<String>();
+	}
+	if (doc["current"].containsKey("temp")) {
+		w->current_Temp = doc["current"]["temp"].as<float>();
+	}
+	if (doc["current"].containsKey("feels_like")) {
+		w->feels_like = doc["current"]["feels_like"].as<float>();
+	}
+	if (doc["current"].containsKey("humidity")) {
+		w->humidity = doc["current"]["humidity"].as<int>();
+	}
+	if (doc["current"].containsKey("wind_speed")) {
+		w->wind_speed = doc["current"]["wind_speed"].as<float>();
+	}
+	if (doc["current"].containsKey("wind_deg")) {
+		w->wind_direction = doc["current"]["wind_deg"].as<int>();
+	}
 
 	return true;
 

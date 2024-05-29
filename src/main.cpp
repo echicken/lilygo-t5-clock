@@ -121,7 +121,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 GFXfont currentFont;
 weatherData w;
-OpenWeather weather(OWM_KEY, OWM_LOCATION);
+OpenWeather weather(OWM_KEY, OWM_LAT, OWM_LON);
 
 int setUnixtime(int32_t unixtime) {
 	timeval epoch = {unixtime, 0};
@@ -216,13 +216,13 @@ void getVoltage() {
 	if (_voltage != voltage) {
 		voltage = _voltage;
 		// These values were arrived at via careful reasoning and due consideration, I assure you. I absolutely did not just make them up.
-		if (voltage < 3.8) {
+		if (voltage < 3.7) {
 			_batt = 0;
-		} else if (voltage < 3.9) {
+		} else if (voltage < 3.8) {
 			_batt = 1;
-		} else if (voltage < 4) {
+		} else if (voltage < 3.9) {
 			_batt = 2;
-		} else if (voltage < 4.1) {
+		} else if (voltage < 4) {
 			_batt = 3;
 		} else {
 			_batt = 4;
@@ -431,7 +431,10 @@ void setup() {
 		if (r) redraw();
 	}
 
-	esp_sleep_enable_timer_wakeup((60 - (waketime % 60))  * 1000000);
+	int nextRun = (60 - (waketime % 60));
+	if (nextRun < 5) nextRun += 5;
+
+	esp_sleep_enable_timer_wakeup(nextRun  * 1000000);
 	esp_deep_sleep_start();
 
 }
